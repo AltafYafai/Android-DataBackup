@@ -119,7 +119,7 @@ class RestoreService : Service() {
     }
 }
 
-interface IRestoreService : IBinder {
+interface IRestoreService : android.os.IInterface {
     fun start()
     abstract class Stub : Binder(), IRestoreService {
         override fun asBinder(): IBinder = this
