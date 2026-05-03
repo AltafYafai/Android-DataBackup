@@ -10,6 +10,8 @@ import com.xayah.databackup.data.FileRepository
 import com.xayah.databackup.data.GitHubReleaseRepository
 import com.xayah.databackup.data.MessageRepository
 import com.xayah.databackup.data.NetworkRepository
+import com.xayah.databackup.data.RestoreProcessRepository
+import com.xayah.databackup.data.RestoreRepository
 import com.xayah.databackup.feature.backup.BackupConfigViewModel
 import com.xayah.databackup.feature.backup.BackupProcessViewModel
 import com.xayah.databackup.feature.backup.BackupSetupViewModel
@@ -19,6 +21,8 @@ import com.xayah.databackup.feature.backup.contacts.ContactsViewModel
 import com.xayah.databackup.feature.backup.messages.MessagesViewModel
 import com.xayah.databackup.feature.backup.networks.NetworksViewModel
 import com.xayah.databackup.feature.dashboard.DashboardViewModel
+import com.xayah.databackup.feature.restore.RestoreProcessViewModel
+import com.xayah.databackup.feature.restore.RestoreViewModel
 import com.xayah.databackup.feature.update.UpdatesViewModel
 import com.xayah.databackup.service.util.BackupAppsHelper
 import com.xayah.databackup.service.util.BackupCallLogsHelper

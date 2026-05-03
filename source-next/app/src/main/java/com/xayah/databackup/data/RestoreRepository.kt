@@ -3,7 +3,6 @@ package com.xayah.databackup.data
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
 import com.squareup.moshi.adapter
-import com.xayah.databackup.App
 import com.xayah.databackup.adapter.WifiConfigurationAdapter
 import com.xayah.databackup.database.entity.App
 import com.xayah.databackup.database.entity.CallLog
