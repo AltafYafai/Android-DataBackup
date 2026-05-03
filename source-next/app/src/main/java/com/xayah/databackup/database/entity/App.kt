@@ -58,11 +58,13 @@ data class App(
 data class AppInfo(
     var packageName: String,
     var userId: Int,
+    var isRestore: Boolean,
     @Embedded(prefix = "info_") var info: Info,
 ) : Parcelable {
     constructor(parcel: Parcel) : this(
         packageName = parcel.readString() ?: "",
         userId = parcel.readInt(),
+        isRestore = parcel.readByte() != 0.toByte(),
         info = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             parcel.readParcelable(Info.CREATOR::class.java.classLoader, Info::class.java)
         } else {
@@ -75,6 +77,7 @@ data class AppInfo(
     override fun writeToParcel(dest: Parcel, flags: Int) {
         dest.writeString(packageName)
         dest.writeInt(userId)
+        dest.writeByte(if (isRestore) 1 else 0)
         dest.writeParcelable(info, flags)
     }
 
@@ -92,11 +95,13 @@ data class AppInfo(
 data class AppStorage(
     var packageName: String,
     var userId: Int,
+    var isRestore: Boolean,
     @Embedded(prefix = "storage_") var storage: Storage,
 ) : Parcelable {
     constructor(parcel: Parcel) : this(
         packageName = parcel.readString() ?: "",
         userId = parcel.readInt(),
+        isRestore = parcel.readByte() != 0.toByte(),
         storage = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             parcel.readParcelable(Storage.CREATOR::class.java.classLoader, Storage::class.java)
         } else {
@@ -109,6 +114,7 @@ data class AppStorage(
     override fun writeToParcel(dest: Parcel, flags: Int) {
         dest.writeString(packageName)
         dest.writeInt(userId)
+        dest.writeByte(if (isRestore) 1 else 0)
         dest.writeParcelable(storage, flags)
     }
 

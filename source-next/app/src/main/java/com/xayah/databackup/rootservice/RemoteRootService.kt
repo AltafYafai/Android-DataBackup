@@ -132,6 +132,7 @@ object RemoteRootService {
                         AppInfo(
                             packageName = it.packageName,
                             userId = user.id,
+                            isRestore = false,
                             info = Info(
                                 uid = it.applicationInfo?.uid ?: 0,
                                 label = it.applicationInfo?.loadLabel(mPackageManager).toString(),
@@ -179,6 +180,7 @@ object RemoteRootService {
                     AppStorage(
                         packageName = item.packageName,
                         userId = userId,
+                        isRestore = false,
                         storage = Storage(
                             apkBytes = apkBytes,
                             internalDataBytes = userBytes + userDeBytes,
