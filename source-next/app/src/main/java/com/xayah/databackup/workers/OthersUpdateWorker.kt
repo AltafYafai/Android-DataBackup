@@ -90,6 +90,7 @@ class OthersUpdateWorker(private val appContext: Context, workerParams: WorkerPa
                     if (networks.contains(it.networkId).not()) {
                         networks[it.networkId] = Network(
                             id = it.networkId,
+                            isRestore = false,
                             ssid = it.SSID,
                             preSharedKey = it.preSharedKey,
                             selected = true,
@@ -117,7 +118,7 @@ class OthersUpdateWorker(private val appContext: Context, workerParams: WorkerPa
                 App.application.contentResolver.query(ContactsContract.RawContacts.CONTENT_URI, null, null, null, null)?.also { rawContactCursor ->
                     while (rawContactCursor.moveToNext()) {
                         runCatching {
-                            val contact = Contact(0, "", "", true)
+                            val contact = Contact(0, false, null, null, true)
                             val rawContact = getAllFields(cursor = rawContactCursor)
                             contact.rawContact = mMoshi.adapter<FiledMap>().toJson(rawContact)
                             contact.id = rawContact.getOrDefault(ContactsContract.RawContacts._ID, -1L) as Long
@@ -158,7 +159,7 @@ class OthersUpdateWorker(private val appContext: Context, workerParams: WorkerPa
                 App.application.contentResolver.query(Calls.CONTENT_URI, null, null, null, Calls.DEFAULT_SORT_ORDER)?.also { callLogCursor ->
                     while (callLogCursor.moveToNext()) {
                         runCatching {
-                            val callLog = CallLog(0, "", true)
+                            val callLog = CallLog(0, false, null, true)
                             val call = getAllFields(cursor = callLogCursor)
                             callLog.call = mMoshi.adapter<FiledMap>().toJson(call)
                             callLog.id = call.getOrDefault(Calls._ID, -1L) as Long
@@ -187,7 +188,7 @@ class OthersUpdateWorker(private val appContext: Context, workerParams: WorkerPa
                     ?.also { smsCursor ->
                         while (smsCursor.moveToNext()) {
                             runCatching {
-                                val sms = Sms(0, "", true)
+                                val sms = Sms(0, false, null, true)
                                 val config = getAllFields(cursor = smsCursor)
                                 sms.config = mMoshi.adapter<FiledMap>().toJson(config)
                                 sms.id = config.getOrDefault(Telephony.Sms._ID, -1L) as Long
@@ -211,7 +212,7 @@ class OthersUpdateWorker(private val appContext: Context, workerParams: WorkerPa
                         // (part)mid -> (pdu)_id <- (addr)msg_id
                         while (pduCursor.moveToNext()) {
                             runCatching {
-                                val mms = Mms(0, "", "", "", true)
+                                val mms = Mms(0, false, null, null, null, true)
                                 val pdu = getAllFields(cursor = pduCursor)
                                 mms.pdu = mMoshi.adapter<FiledMap>().toJson(pdu)
                                 mms.id = pdu.getOrDefault(Telephony.Mms._ID, -1L) as Long
