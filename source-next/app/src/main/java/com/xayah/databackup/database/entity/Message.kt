@@ -4,6 +4,7 @@ import android.provider.Telephony
 import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import com.squareup.moshi.JsonClass
 import com.squareup.moshi.Moshi
@@ -20,9 +21,10 @@ object MessageConstant {
 }
 
 @JsonClass(generateAdapter = true)
-@Entity(tableName = "messages_sms", primaryKeys = ["id"])
+@Entity(tableName = "messages_sms", primaryKeys = ["id", "isRestore"])
 data class Sms(
     var id: Long,
+    @ColumnInfo(defaultValue = "0") var isRestore: Boolean = false,
     var config: String?, // JSON
     var selected: Boolean,
 )
@@ -54,9 +56,10 @@ fun Flow<List<Sms>>.deserializeSms(): Flow<List<SmsDeserialized>> = map { flow -
 }
 
 @JsonClass(generateAdapter = true)
-@Entity(tableName = "messages_mms", primaryKeys = ["id"])
+@Entity(tableName = "messages_mms", primaryKeys = ["id", "isRestore"])
 data class Mms(
     var id: Long,
+    @ColumnInfo(defaultValue = "0") var isRestore: Boolean = false,
     var pdu: String?,  // JSON
     var addr: String?, // JSON
     var part: String?, // JSON

@@ -47,6 +47,8 @@ class App : Application() {
         singleOf(::CallLogRepository) bind CallLogRepository::class
         singleOf(::MessageRepository) bind MessageRepository::class
         singleOf(::BackupProcessRepository) bind BackupProcessRepository::class
+        singleOf(::RestoreRepository) bind RestoreRepository::class
+        singleOf(::RestoreProcessRepository) bind RestoreProcessRepository::class
         singleOf(::GitHubReleaseRepository) bind GitHubReleaseRepository::class
         singleOf(::BackupAppsHelper) bind BackupAppsHelper::class
         singleOf(::BackupNetworksHelper) bind BackupNetworksHelper::class
@@ -55,6 +57,8 @@ class App : Application() {
         singleOf(::BackupMessagesHelper) bind BackupMessagesHelper::class
 
         viewModelOf(::DashboardViewModel)
+        viewModelOf(::RestoreViewModel)
+        viewModelOf(::RestoreProcessViewModel)
         viewModelOf(::BackupSetupViewModel)
         viewModelOf(::BackupProcessViewModel)
         viewModelOf(::BackupConfigViewModel)

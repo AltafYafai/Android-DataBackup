@@ -106,6 +106,88 @@ object ZstdHelper {
         return status to info
     }
 
+    suspend fun decompressAndUnpackage(inputPath: String, destinationDir: String, callback: ICallback? = null): Pair<Int, String> {
+        val args = mutableListOf("tar", "-xpf", "-", "-C", destinationDir)
+        var status = 0
+        var info = ""
+
+        val stdIn = File.createTempFile(TMP_FIFO_PREFIX, TMP_SUFFIX, App.application.cacheDir)
+        stdIn.delete()
+        Os.mkfifo(stdIn.path, 420)
+        val stdErr = File.createTempFile(TMP_FIFO_PREFIX, TMP_SUFFIX, App.application.cacheDir)
+        stdErr.delete()
+        Os.mkfifo(stdErr.path, 420)
+        runCatching {
+            withContext(Dispatchers.IO) {
+                val getStdErr = async(Dispatchers.IO) {
+                    runCatching {
+                        FileInputStream(stdErr).use { fileInputStream ->
+                            fileInputStream.bufferedReader().use { bufferedReader ->
+                                info = normalizeTarStdErr(bufferedReader.readText())
+                            }
+                        }
+                    }.onFailure {
+                        val msg = "Failed to get std err."
+                        LogHelper.e(TAG, "decompressAndUnpackage#getStdErr", msg, it)
+                        ShellHelper.killRootService()
+                        status = -1
+                        info = msg
+                        throw IllegalStateException()
+                    }
+                }
+
+                val feedStdIn = async(Dispatchers.IO) {
+                    var result: String? = null
+                    var tr: Throwable? = null
+                    runCatching {
+                        result = RemoteRootService.decompress(inputPath, stdIn.path, callback)
+                    }.onFailure {
+                        val msg = "Failed to feed std in."
+                        result = msg
+                        tr = it
+                    }
+                    if (result != null) {
+                        LogHelper.e(TAG, "decompressAndUnpackage#feedStdIn", result, tr)
+                        ShellHelper.killRootService()
+                        status = -1
+                        info = result
+                        throw IllegalStateException()
+                    }
+                }
+
+                val callTarCli = async(Dispatchers.IO) {
+                    runCatching {
+                        status = RemoteRootService.callTarCli(
+                            stdOut = "", // Not used for extraction
+                            stdErr = stdErr.path,
+                            argv = args.toTypedArray()
+                        )
+                    }.onFailure {
+                        val msg = "Failed to call tar cli."
+                        LogHelper.e(TAG, "decompressAndUnpackage#callTarCli", msg, it)
+                        ShellHelper.killRootService()
+                        status = -1
+                        info = msg
+                        throw IllegalStateException()
+                    }
+                }
+
+                getStdErr.await()
+                feedStdIn.await()
+                callTarCli.await()
+            }
+        }.onFailure {
+            LogHelper.e(TAG, "decompressAndUnpackage", "Failed to decompress and unpackage", it)
+        }
+
+        stdIn.delete()
+        stdErr.delete()
+
+        LogHelper.i(TAG, "decompressAndUnpackage", "args:\n$args\nstatus: $status\ninfo:\n$info")
+
+        return status to info
+    }
+
     private fun normalizeTarStdErr(stderr: String): String {
         if (stderr.isBlank()) return stderr
         val prefixRegex = Regex("^${Regex.escape(App.application.packageName)}:root:\\d+:\\s*")

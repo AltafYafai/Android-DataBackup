@@ -11,10 +11,11 @@ import androidx.room.Entity
 import kotlinx.serialization.Serializable
 
 @Serializable
-@Entity(tableName = "apps", primaryKeys = ["packageName", "userId"])
+@Entity(tableName = "apps", primaryKeys = ["packageName", "userId", "isRestore"])
 data class App(
     var packageName: String,
     var userId: Int,
+    @ColumnInfo(defaultValue = "0") var isRestore: Boolean = false,
     @Embedded(prefix = "info_") var info: Info,
     @Embedded(prefix = "option_") var option: Option,
     @Embedded(prefix = "storage_") var storage: Storage,

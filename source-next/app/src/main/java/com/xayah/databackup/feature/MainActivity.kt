@@ -39,6 +39,8 @@ import com.xayah.databackup.feature.backup.call_logs.BackupCallLogsScreen
 import com.xayah.databackup.feature.backup.contacts.BackupContactsScreen
 import com.xayah.databackup.feature.backup.messages.BackupMessagesScreen
 import com.xayah.databackup.feature.backup.networks.BackupNetworksScreen
+import com.xayah.databackup.feature.restore.RestoreProcessScreen
+import com.xayah.databackup.feature.restore.RestoreSetupScreen
 import com.xayah.databackup.feature.dashboard.DashboardScreen
 import com.xayah.databackup.feature.settings.SettingsScreen
 import com.xayah.databackup.feature.update.UpdatesScreen
@@ -210,6 +212,16 @@ class MainActivity : ComponentActivity() {
 
                             composable<BackupMessagesRoute> {
                                 BackupMessagesScreen(navController)
+                            }
+                        }
+
+                        navigation<RestoreRoute>(startDestination = RestoreSetupRoute) {
+                            composable<RestoreSetupRoute> {
+                                RestoreSetupScreen(navController)
+                            }
+
+                            composable<RestoreProcessRoute> {
+                                RestoreProcessScreen(navController)
                             }
                         }
                     }

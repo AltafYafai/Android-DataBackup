@@ -42,3 +42,12 @@ data object BackupCallLogsRoute
 
 @Serializable
 data object BackupMessagesRoute
+
+@Serializable
+data object RestoreRoute
+
+@Serializable
+data object RestoreSetupRoute
+
+@Serializable
+data object RestoreProcessRoute

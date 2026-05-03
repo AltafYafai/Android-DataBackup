@@ -22,6 +22,7 @@ import android.os.ParcelFileDescriptor
 import android.os.RemoteException
 import android.os.StatFs
 import android.os.UserManagerHidden
+import com.github.luben.zstd.ZstdInputStream
 import com.github.luben.zstd.ZstdOutputStream
 import com.topjohnwu.superuser.ipc.RootService
 import com.xayah.databackup.App
@@ -281,6 +282,24 @@ object RemoteRootService {
             return null
         }
 
+        override fun decompress(inputPath: String, outputPath: String, callback: ICallback?): String? {
+            runCatching {
+                FileInputStream(inputPath).use { fileInputStream ->
+                    FileOutputStream(outputPath).use { fileOutputStream ->
+                        CountingOutputStream(
+                            source = fileOutputStream,
+                            onProgress = if (callback != null) { bytesWritten, speed -> callback.onProgress(bytesWritten, speed) } else null
+                        ).use { countingOutputStream ->
+                            ZstdInputStream(fileInputStream).use { zstdInputStream ->
+                                zstdInputStream.copyTo(countingOutputStream)
+                            }
+                        }
+                    }
+                }
+            }.onFailure { return it.message }
+            return null
+        }
+
         override fun mkdirs(path: String): Boolean {
             return runCatching {
                 val file = File(path)
@@ -492,6 +511,10 @@ object RemoteRootService {
 
     suspend fun compress(level: Int, inputPath: String, outputPath: String, callback: ICallback?): String? {
         return getService()?.compress(level, inputPath, outputPath, callback)
+    }
+
+    suspend fun decompress(inputPath: String, outputPath: String, callback: ICallback?): String? {
+        return getService()?.decompress(inputPath, outputPath, callback)
     }
 
     suspend fun mkdirs(path: String): Boolean {

@@ -23,7 +23,7 @@ import com.xayah.databackup.database.entity.Sms
         Sms::class,
         Mms::class,
     ],
-    version = 1
+    version = 2
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun appDao(): AppDao

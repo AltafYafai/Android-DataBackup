@@ -1,6 +1,7 @@
 package com.xayah.databackup.database.entity
 
 import android.provider.ContactsContract
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import com.squareup.moshi.JsonClass
 import com.squareup.moshi.Moshi
@@ -11,9 +12,10 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 @JsonClass(generateAdapter = true)
-@Entity(tableName = "contacts", primaryKeys = ["id"])
+@Entity(tableName = "contacts", primaryKeys = ["id", "isRestore"])
 data class Contact(
     var id: Long,
+    @ColumnInfo(defaultValue = "0") var isRestore: Boolean = false,
     var rawContact: String?, // JSON
     var data: String?,       // JSON
     var selected: Boolean,

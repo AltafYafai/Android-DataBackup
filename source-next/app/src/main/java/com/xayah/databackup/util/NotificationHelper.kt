@@ -26,6 +26,25 @@ object NotificationHelper {
 
     const val NOTIFICATION_ID_APPS_UPDATE_WORKER = 1
     const val NOTIFICATION_ID_OTHERS_UPDATE_WORKER = 2
+    const val NOTIFICATION_ID_RESTORE = 3
+
+    fun getRestoreNotificationId(): Int = NOTIFICATION_ID_RESTORE
+
+    fun getRestoreNotification(context: Context, text: String, progress: Float) =
+        getNotificationBuilder(context).apply {
+            setContentTitle(context.getString(R.string.restoring))
+            setContentText(text)
+            setProgress(100, (progress * 100).toInt(), false)
+        }.build()
+
+    fun notifyRestoreFinished(context: Context) {
+        val notification = getNotificationBuilder(context).apply {
+            setContentTitle(context.getString(R.string.restore))
+            setContentText(context.getString(R.string.finished))
+            setProgress(0, 0, false)
+        }.build()
+        getNotificationManager(context).notify(NOTIFICATION_ID_RESTORE, notification)
+    }
 
     fun checkPermission(context: Context): Boolean =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

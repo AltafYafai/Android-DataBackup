@@ -20,6 +20,7 @@ interface IRemoteRootService {
     int callTarCli(String stdOut, String stdErr, in String[] argv);
     List<String> getPackageSourceDir(String packageName, int userId);
     String compress(int level, String inputPath, String outputPath, ICallback callback);
+    String decompress(String inputPath, String outputPath, ICallback callback);
     boolean mkdirs(String path);
     boolean exists(String path);
     boolean deleteRecursively(String path);

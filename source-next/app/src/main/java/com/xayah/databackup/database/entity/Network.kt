@@ -1,6 +1,7 @@
 package com.xayah.databackup.database.entity
 
 import android.net.wifi.WifiConfiguration
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import com.squareup.moshi.JsonClass
 import com.squareup.moshi.Moshi
@@ -10,9 +11,10 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 @JsonClass(generateAdapter = true)
-@Entity(tableName = "networks", primaryKeys = ["id"])
+@Entity(tableName = "networks", primaryKeys = ["id", "isRestore"])
 data class Network(
     var id: Int,
+    @ColumnInfo(defaultValue = "0") var isRestore: Boolean = false,
     var ssid: String,
     var preSharedKey: String?,
     var selected: Boolean,

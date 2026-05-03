@@ -558,6 +558,19 @@ class BackupAppsHelper(private val mBackupProcessRepo: BackupProcessRepository) 
         }
     }
 
+    private suspend fun saveAppMetadata(app: App) {
+        val backupConfig = mBackupProcessRepo.getBackupConfig()
+        val appDir = "${backupConfig.path}/apps/${app.packageName}"
+        val jsonPath = "$appDir/restore.json"
+        val json = runCatching {
+            val moshi: Moshi = Moshi.Builder().build()
+            moshi.adapter<App>().toJson(app)
+        }.getOrNull()
+        if (json != null) {
+            RemoteRootService.writeText(jsonPath, json)
+        }
+    }
+
     suspend fun start() {
         val apps = mBackupProcessRepo.getApps()
         apps.forEachIndexed { index, app ->
@@ -590,6 +603,8 @@ class BackupAppsHelper(private val mBackupProcessRepo: BackupProcessRepository) 
 
                 processAddlDataStep(app, state)
                 state.addlDataHandled = true
+
+                saveAppMetadata(app)
             } catch (e: CancellationException) {
                 markCurrentAppRemainingStepsCanceled(app, state)
                 apps.drop(index + 1).forEach { pendingApp ->

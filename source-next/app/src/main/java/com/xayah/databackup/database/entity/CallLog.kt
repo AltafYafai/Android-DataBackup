@@ -1,6 +1,7 @@
 package com.xayah.databackup.database.entity
 
 import android.provider.CallLog.Calls
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import com.squareup.moshi.JsonClass
 import com.squareup.moshi.Moshi
@@ -12,9 +13,10 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 @JsonClass(generateAdapter = true)
-@Entity(tableName = "call_logs", primaryKeys = ["id"])
+@Entity(tableName = "call_logs", primaryKeys = ["id", "isRestore"])
 data class CallLog(
     var id: Long,
+    @ColumnInfo(defaultValue = "0") var isRestore: Boolean = false,
     var call: String?, // JSON
     var selected: Boolean,
 )

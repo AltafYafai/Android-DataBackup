@@ -36,6 +36,7 @@ import androidx.navigation.NavHostController
 import com.xayah.databackup.BuildConfig
 import com.xayah.databackup.R
 import com.xayah.databackup.feature.BackupRoute
+import com.xayah.databackup.feature.RestoreRoute
 import com.xayah.databackup.feature.SettingsRoute
 import com.xayah.databackup.feature.UpdatesRoute
 import com.xayah.databackup.ui.component.ActionButton
@@ -148,7 +149,9 @@ fun DashboardScreen(navController: NavHostController, viewModel: DashboardViewMo
                         icon = ImageVector.vectorResource(R.drawable.ic_archive_restore),
                         title = stringResource(R.string.restore),
                         subtitle = stringResource(R.string.restore_your_data)
-                    ) {}
+                    ) {
+                        navController.navigate(RestoreRoute)
+                    }
                 }
 
                 ActionButton(
