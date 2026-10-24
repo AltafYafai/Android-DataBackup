@@ -147,9 +147,9 @@ fun PageDashboard() {
                         enabled = nullBackupDir.not(),
                         title = stringResource(id = R.string.backup_apps),
                         icon = ImageVector.vectorResource(id = R.drawable.ic_rounded_acute),
-                        colorContainer = ThemedColorSchemeKeyTokens.RedPrimaryContainer,
-                        colorL80D20 = ThemedColorSchemeKeyTokens.RedL80D20,
-                        onColorContainer = ThemedColorSchemeKeyTokens.RedOnPrimaryContainer
+                        colorContainer = ThemedColorSchemeKeyTokens.PrimaryContainer,
+                        colorL80D20 = ThemedColorSchemeKeyTokens.PrimaryL80D20,
+                        onColorContainer = ThemedColorSchemeKeyTokens.OnPrimaryContainer
                     ) {
                         navController.navigateSingle(MainRoutes.List.getRoute(target = Target.Apps, opType = OpType.BACKUP))
                     }
@@ -158,9 +158,9 @@ fun PageDashboard() {
                         enabled = nullBackupDir.not(),
                         title = stringResource(id = R.string.backup_files),
                         icon = ImageVector.vectorResource(id = R.drawable.ic_rounded_acute),
-                        colorContainer = ThemedColorSchemeKeyTokens.YellowPrimaryContainer,
-                        colorL80D20 = ThemedColorSchemeKeyTokens.YellowL80D20,
-                        onColorContainer = ThemedColorSchemeKeyTokens.YellowOnPrimaryContainer
+                        colorContainer = ThemedColorSchemeKeyTokens.SecondaryContainer,
+                        colorL80D20 = ThemedColorSchemeKeyTokens.SecondaryL80D20,
+                        onColorContainer = ThemedColorSchemeKeyTokens.OnSecondaryContainer
                     ) {
                         navController.navigateSingle(MainRoutes.List.getRoute(target = Target.Files, opType = OpType.BACKUP))
                     }
@@ -188,9 +188,9 @@ fun PageDashboard() {
                         enabled = nullBackupDir.not(),
                         title = stringResource(id = R.string.restore),
                         icon = ImageVector.vectorResource(id = R.drawable.ic_rounded_history),
-                        colorContainer = ThemedColorSchemeKeyTokens.OrangePrimaryContainer,
-                        colorL80D20 = ThemedColorSchemeKeyTokens.OrangeL80D20,
-                        onColorContainer = ThemedColorSchemeKeyTokens.OrangeOnPrimaryContainer,
+                        colorContainer = ThemedColorSchemeKeyTokens.TertiaryContainer,
+                        colorL80D20 = ThemedColorSchemeKeyTokens.TertiaryL80D20,
+                        onColorContainer = ThemedColorSchemeKeyTokens.OnTertiaryContainer,
                         actionIcon = Icons.Rounded.KeyboardArrowRight
                     ) {
                         navController.navigateSingle(MainRoutes.Restore.route)
@@ -200,9 +200,9 @@ fun PageDashboard() {
                         enabled = nullBackupDir.not(),
                         title = stringResource(R.string.history),
                         icon = Icons.Rounded.ListAlt,
-                        colorContainer = ThemedColorSchemeKeyTokens.PinkPrimaryContainer,
-                        colorL80D20 = ThemedColorSchemeKeyTokens.PinkL80D20,
-                        onColorContainer = ThemedColorSchemeKeyTokens.PinkOnPrimaryContainer,
+                        colorContainer = ThemedColorSchemeKeyTokens.SurfaceContainerHigh,
+                        colorL80D20 = ThemedColorSchemeKeyTokens.SurfaceContainerHighest,
+                        onColorContainer = ThemedColorSchemeKeyTokens.OnSurface,
                         actionIcon = Icons.Rounded.KeyboardArrowRight
                     ) {
                         navController.navigateSingle(MainRoutes.History.route)

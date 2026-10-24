@@ -368,8 +368,8 @@ fun ModalDropdownMenu(
                 expandedStates = expandedStates,
                 transformOriginState = transformOriginState,
                 modifier = modifier,
-                shape = ShapeKeyTokens.CornerLarge.toShape(),
-                verticalPadding = PaddingTokens.Level0,
+                shape = ShapeKeyTokens.CornerExtraLarge.toShape(),
+                verticalPadding = PaddingTokens.Level4,
                 content = content
             )
         }

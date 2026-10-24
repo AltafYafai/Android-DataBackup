@@ -318,7 +318,12 @@ fun PageProcessing(
                 )
             }
 
-            Surface(modifier = Modifier.fillMaxSize(), shape = RoundedCornerShape(SizeTokens.Level12), color = ThemedColorSchemeKeyTokens.SurfaceContainerLowest.value, shadowElevation = SizeTokens.Level1) {
+            Surface(
+                modifier = Modifier.fillMaxSize(),
+                shape = RoundedCornerShape(topStart = SizeTokens.Level24, topEnd = SizeTokens.Level24),
+                color = ThemedColorSchemeKeyTokens.SurfaceContainerLowest.value,
+                shadowElevation = SizeTokens.Level2
+            ) {
                 val lazyListState = rememberLazyListState()
 
                 LaunchedEffect(task) {

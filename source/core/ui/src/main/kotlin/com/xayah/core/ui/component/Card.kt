@@ -579,12 +579,14 @@ fun OverviewCard(
         modifier = modifier
             .fillMaxWidth()
             .wrapContentHeight(),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(SizeTokens.Level20),
         colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = colorContainer.value),
+        elevation = androidx.compose.material3.CardDefaults.cardElevation(defaultElevation = SizeTokens.Level1),
         onClick = onClick
     ) {
         Row(
             modifier = Modifier
-                .padding(SizeTokens.Level16)
+                .padding(SizeTokens.Level20)
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(SizeTokens.Level16)

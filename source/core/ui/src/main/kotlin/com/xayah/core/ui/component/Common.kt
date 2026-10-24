@@ -83,8 +83,9 @@ fun ActionButton(
     val interactionSource = remember { MutableInteractionSource() }
     Card(
         modifier = modifier.wrapContentHeight(),
-        shape = RoundedCornerShape(SizeTokens.Level18),
+        shape = RoundedCornerShape(SizeTokens.Level20),
         colors = CardDefaults.cardColors(containerColor = colorContainer.value.withState(enabled)),
+        elevation = CardDefaults.cardElevation(defaultElevation = SizeTokens.Level1),
         onClick = onClick,
         enabled = enabled,
         interactionSource = interactionSource,

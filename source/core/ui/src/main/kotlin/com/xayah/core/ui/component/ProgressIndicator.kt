@@ -1,5 +1,6 @@
 package com.xayah.core.ui.component
 
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -42,7 +43,7 @@ fun LinearProgressIndicator(
     modifier: Modifier = Modifier,
     color: Color = ProgressIndicatorDefaults.linearColor,
     trackColor: Color = ProgressIndicatorDefaults.linearTrackColor,
-    strokeCap: StrokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
+    strokeCap: StrokeCap = StrokeCap.Round,
     enabled: Boolean = true,
 ) {
     LinearProgressIndicator(
@@ -59,7 +60,7 @@ fun LinearProgressIndicator(
     modifier: Modifier = Modifier,
     color: Color = ProgressIndicatorDefaults.linearColor,
     trackColor: Color = ProgressIndicatorDefaults.linearTrackColor,
-    strokeCap: StrokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
+    strokeCap: StrokeCap = StrokeCap.Round,
     enabled: Boolean = true,
 ) {
     LinearProgressIndicator(
@@ -76,13 +77,13 @@ fun AnimatedLinearProgressIndicator(
     modifier: Modifier = Modifier,
     color: Color = ProgressIndicatorDefaults.linearColor,
     trackColor: Color = ProgressIndicatorDefaults.linearTrackColor,
-    strokeCap: StrokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
+    strokeCap: StrokeCap = StrokeCap.Round,
     enabled: Boolean = true,
 ) {
     var targetProgress by remember { mutableFloatStateOf(0f) }
     val animatedProgress = animateFloatAsState(
         targetValue = targetProgress,
-        animationSpec = tween(durationMillis = 800, delayMillis = 100),
+        animationSpec = tween(durationMillis = 650, easing = FastOutSlowInEasing),
         label = AnimationTokens.AnimatedProgressLabel
     )
     LaunchedEffect(progress) {
@@ -103,7 +104,7 @@ fun AnimatedMultiColorLinearProgressIndicator(
     multiColorProgress: List<MultiColorProgress>,
     modifier: Modifier = Modifier,
     trackColor: Color = ProgressIndicatorDefaults.linearTrackColor,
-    strokeCap: StrokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
+    strokeCap: StrokeCap = StrokeCap.Round,
 ) {
     val progress = multiColorProgress.sumOf { it.progress.toDouble() }.toFloat()
     val coercedProgress = progress.coerceIn(0f, 1f).takeIf { it.isNaN().not() } ?: 0f
@@ -111,7 +112,7 @@ fun AnimatedMultiColorLinearProgressIndicator(
     var targetProgress by remember { mutableFloatStateOf(0f) }
     val animatedProgress = animateFloatAsState(
         targetValue = targetProgress,
-        animationSpec = tween(durationMillis = 800, delayMillis = 100),
+        animationSpec = tween(durationMillis = 650, easing = FastOutSlowInEasing),
         label = AnimationTokens.AnimatedProgressLabel
     )
     LaunchedEffect(coercedProgress) {
@@ -142,10 +143,31 @@ fun AnimatedMultiColorLinearProgressIndicator(
 }
 
 @Composable
-fun SegmentProgressIndicator(modifier: Modifier = Modifier, enabled: Boolean = false, progress: Float, color: ThemedColorSchemeKeyTokens, trackColor: ThemedColorSchemeKeyTokens) {
-    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(SizeTokens.Level4)) {
-        val corrected = if (progress < 0.05f) 0f else if (progress > 0.95f) 1f else progress
-        if (corrected > 0.05f)
+fun SegmentProgressIndicator(
+    modifier: Modifier = Modifier,
+    enabled: Boolean = false,
+    progress: Float,
+    color: ThemedColorSchemeKeyTokens,
+    trackColor: ThemedColorSchemeKeyTokens
+) {
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(SizeTokens.Level6)
+    ) {
+        val coerced = progress.coerceIn(0f, 1f).takeIf { it.isNaN().not() } ?: 0f
+        var targetProgress by remember { mutableFloatStateOf(0f) }
+        val animatedProgress by animateFloatAsState(
+            targetValue = targetProgress,
+            animationSpec = tween(durationMillis = 600, easing = FastOutSlowInEasing),
+            label = AnimationTokens.AnimatedProgressLabel
+        )
+        LaunchedEffect(coerced) {
+            targetProgress = coerced
+        }
+
+        val corrected = if (animatedProgress < 0.03f) 0f else if (animatedProgress > 0.97f) 1f else animatedProgress
+        if (corrected > 0.03f) {
             com.xayah.core.ui.component.LinearProgressIndicator(
                 modifier = Modifier.weight(corrected),
                 color = color.value.withState(enabled),
@@ -153,14 +175,16 @@ fun SegmentProgressIndicator(modifier: Modifier = Modifier, enabled: Boolean = f
                 progress = 1f,
                 strokeCap = StrokeCap.Round
             )
-        if (1 - corrected > 0.05f)
+        }
+        if (1f - corrected > 0.03f) {
             com.xayah.core.ui.component.LinearProgressIndicator(
-                modifier = Modifier.weight(1 - corrected),
+                modifier = Modifier.weight(1f - corrected),
                 color = color.value.withState(enabled),
                 trackColor = trackColor.value.withState(enabled),
                 progress = 0f,
                 strokeCap = StrokeCap.Round
             )
+        }
     }
 }
 
@@ -168,18 +192,19 @@ fun SegmentProgressIndicator(modifier: Modifier = Modifier, enabled: Boolean = f
 fun SegmentCircularProgressIndicator(
     segments: Int,
     progress: Float,
-    gapPx: Float = 6f,
+    gapPx: Float = 5f,
     size: Dp = SizeTokens.Level128,
     color: Color = ThemedColorSchemeKeyTokens.PrimaryContainer.value,
     trackColor: Color = ThemedColorSchemeKeyTokens.Primary.value,
     strokeWidth: Dp = SizeTokens.Level8,
     strokeCap: StrokeCap = StrokeCap.Round,
 ) {
-    val perSegmentProgress = remember(segments) { 1F / segments }
+    val totalSegments = if (segments <= 0) 1 else segments
+    val perSegmentProgress = remember(totalSegments) { 1F / totalSegments }
     var targetProgress by remember { mutableFloatStateOf(if (progress.isNaN()) 0f else progress) }
     val animatedProgress by animateFloatAsState(
         targetValue = targetProgress,
-        animationSpec = tween(durationMillis = 800, delayMillis = 100),
+        animationSpec = tween(durationMillis = 650, easing = FastOutSlowInEasing),
         label = AnimationTokens.AnimatedProgressLabel
     )
     LaunchedEffect(progress) {
@@ -189,47 +214,73 @@ fun SegmentCircularProgressIndicator(
     Canvas(modifier = Modifier.size(size)) {
         val strokeWidthPx = strokeWidth.toPx()
         val sizePx = size.toPx() - strokeWidthPx
-        repeat(segments) { index ->
-            val current = perSegmentProgress * (index + 1)
-            val diff = current - animatedProgress
-            val segmentProgress = when {
-                diff < perSegmentProgress -> {
-                    if (diff >= 0) {
-                        1 - diff / perSegmentProgress
-                    } else {
-                        1f
-                    }
-                }
+        val arcSize = Size(sizePx, sizePx)
+        val arcTopLeft = Offset(strokeWidthPx / 2f, strokeWidthPx / 2f)
 
-                else -> 0f
-            }
-
-            withTransform({
-                rotate(degrees = 0f, pivot = center)
-            }) {
-                drawArc(
-                    color = color,
-                    startAngle = 270f + gapPx + index * 360f / segments,
-                    sweepAngle = 360f / segments - gapPx * 2,
-                    useCenter = false,
-                    topLeft = Offset(strokeWidthPx / 2, strokeWidthPx / 2),
-                    size = Size(sizePx, sizePx),
-                    style = Stroke(width = strokeWidthPx, cap = strokeCap)
-                )
-            }
-
-            withTransform({
-                rotate(degrees = 0f, pivot = center)
-            }) {
+        if (totalSegments == 1) {
+            // Smooth continuous circular gauge
+            drawArc(
+                color = color.copy(alpha = 0.35f),
+                startAngle = 0f,
+                sweepAngle = 360f,
+                useCenter = false,
+                topLeft = arcTopLeft,
+                size = arcSize,
+                style = Stroke(width = strokeWidthPx, cap = strokeCap)
+            )
+            if (animatedProgress > 0f) {
                 drawArc(
                     color = trackColor,
-                    startAngle = 270f + gapPx + index * 360f / segments,
-                    sweepAngle = (360f / segments - gapPx * 2) * segmentProgress,
+                    startAngle = 270f,
+                    sweepAngle = 360f * animatedProgress.coerceIn(0f, 1f),
                     useCenter = false,
-                    topLeft = Offset(strokeWidthPx / 2, strokeWidthPx / 2),
-                    size = Size(sizePx, sizePx),
+                    topLeft = arcTopLeft,
+                    size = arcSize,
                     style = Stroke(width = strokeWidthPx, cap = strokeCap)
                 )
+            }
+        } else {
+            repeat(totalSegments) { index ->
+                val current = perSegmentProgress * (index + 1)
+                val diff = current - animatedProgress
+                val segmentProgress = when {
+                    diff < perSegmentProgress -> {
+                        if (diff >= 0) {
+                            1f - diff / perSegmentProgress
+                        } else {
+                            1f
+                        }
+                    }
+                    else -> 0f
+                }
+
+                val segAngle = 360f / totalSegments
+                val start = 270f + gapPx + index * segAngle
+                val sweep = segAngle - gapPx * 2f
+
+                // Track segment
+                drawArc(
+                    color = color.copy(alpha = 0.35f),
+                    startAngle = start,
+                    sweepAngle = sweep,
+                    useCenter = false,
+                    topLeft = arcTopLeft,
+                    size = arcSize,
+                    style = Stroke(width = strokeWidthPx, cap = strokeCap)
+                )
+
+                // Active filled segment
+                if (segmentProgress > 0f) {
+                    drawArc(
+                        color = trackColor,
+                        startAngle = start,
+                        sweepAngle = sweep * segmentProgress.coerceIn(0f, 1f),
+                        useCenter = false,
+                        topLeft = arcTopLeft,
+                        size = arcSize,
+                        style = Stroke(width = strokeWidthPx, cap = strokeCap)
+                    )
+                }
             }
         }
     }
