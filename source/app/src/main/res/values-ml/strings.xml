@@ -116,7 +116,7 @@
     <string name="backup_user">ബാക്കപ്പ് യൂസർ</string>
     <string name="mounted">മൗണ്ടെഡ്</string>
     <string name="keep_screen_on_desc">പ്രൊസസ്സ് ചെയ്യുമ്പോൾ ഡിവൈസ് ഉണർത്തി വെക്കുക</string>
-    <string name="app_name">MyBackup</string>
+    <string name="app_name">BackupVault</string>
     <string name="no_browser">ചിലപ്പോൾ ഇത് ഓപ്പൺ ചെയ്യാനുള്ള ബ്രൗസർ ഇല്ലായിരിക്കാം</string>
     <string name="environment_detection">എൺവിരോൺമെൻ്റ് കണ്ടെത്തുക</string>
     <string name="succeed">വിജയിക്കുക</string>

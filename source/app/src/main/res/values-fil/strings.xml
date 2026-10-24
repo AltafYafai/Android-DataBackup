@@ -40,7 +40,7 @@
     <string name="restore_list">Listahan ng pag-restore</string>
     <string name="date">Petsa</string>
     <string name="restoring">Nire-restore</string>
-    <string name="app_name">MyBackup</string>
+    <string name="app_name">BackupVault</string>
     <string name="start">Simulan</string>
     <string name="welcome_to_use">Maligayang Pagdating sa DataBackup</string>
     <string name="update_records">I-update ang mga record</string>

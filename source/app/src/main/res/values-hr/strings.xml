@@ -82,7 +82,7 @@
     <string name="compression_type">Vrsta komprimiranja</string>
     <string name="backup_user">Backup korisnik</string>
     <string name="mounted">Montirano</string>
-    <string name="app_name">MyBackup</string>
+    <string name="app_name">BackupVault</string>
     <string name="environment_detection">Prepoznavanje okruženja</string>
     <string name="succeed">Uspješno</string>
     <string name="system">Sistemsko</string>

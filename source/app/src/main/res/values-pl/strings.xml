@@ -16,7 +16,7 @@
     <string name="log">Dziennik</string>
     <string name="confirm">Potwierdź</string>
     <string name="loading">Ładowanie</string>
-    <string name="app_name">MyBackup</string>
+    <string name="app_name">BackupVault</string>
     <string name="welcome_to_use">Witamy w DataBackup</string>
     <string name="update_records">Aktualizuj rekordy</string>
     <string name="environment_detection">Wykrywanie środowiska</string>

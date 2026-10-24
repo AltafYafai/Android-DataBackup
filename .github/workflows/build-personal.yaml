@@ -54,7 +54,7 @@ jobs:
             exit 0
           fi
           APK_FILE=$(ls -1 -- *.apk | head -n 1)
-          CAPTION=$(printf 'MyBackup %s\ncommit: %s\nrun: %s/%s/actions/runs/%s\nbuilt %s' \
+          CAPTION=$(printf 'BackupVault %s\ncommit: %s\nrun: %s/%s/actions/runs/%s\nbuilt %s' \
             "$APK_FILE" \
             "${GITHUB_SHA::7}" \
             "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" \

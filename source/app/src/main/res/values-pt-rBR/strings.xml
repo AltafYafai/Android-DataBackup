@@ -81,7 +81,7 @@
     <string name="local">Local</string>
     <string name="share">Compartilhar</string>
     <string name="finish">Finalizar</string>
-    <string name="app_name">MyBackup</string>
+    <string name="app_name">BackupVault</string>
     <string name="start_subtitle">De acordo com as políticas relevantes, você precisa ler atentamente e concordar com o seguinte Contrato do Usuário e Política de Privacidade antes de começar a usar este app.</string>
     <string name="update_records">Atualizar registros</string>
     <string name="environment_detection">Detecção de ambiente</string>

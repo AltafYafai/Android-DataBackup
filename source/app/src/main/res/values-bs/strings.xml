@@ -55,7 +55,7 @@
     <string name="translators">Prevodioci</string>
     <string name="translators_desc">Cijenimo njihov trud</string>
     <string name="welcome_to_use">Dobro došli u DataBackup</string>
-    <string name="app_name">MyBackup</string>
+    <string name="app_name">BackupVault</string>
     <string name="update_records">Aktualiziraj zapise</string>
     <string name="environment_detection">Prepoznavanje okruženja</string>
     <string name="start">Pokreni</string>

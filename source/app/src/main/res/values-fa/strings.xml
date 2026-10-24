@@ -45,7 +45,7 @@
     <string name="notification_desc">برای ارسال آگاه‌سازهای لازم موردنیاز است</string>
     <string name="permission_is_denied">مجوز رد شده است</string>
     <string name="root_denied_msg">لطفاً مدیر ریشه خود را بررسی کنید و برنامه را باز راه‌اندازی کنید</string>
-    <string name="app_name">MyBackup</string>
+    <string name="app_name">BackupVault</string>
     <string name="processing_exit_confirmation">خروج از برنامه و توقف کار در حال انجام؟</string>
     <string name="no_available_account">هیچ حساب در دسترسی نیست</string>
     <string name="word_return">بازگرداندن</string>

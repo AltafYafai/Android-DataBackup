@@ -137,7 +137,7 @@
     <string name="translators">Tarjimonlar</string>
     <string name="exported">Exported</string>
     <string name="start_subtitle">Tegishli siyosatlarga ko\'ra, ushbu ilovadan foydalanishni boshlashdan oldin quyidagi Foydalanuvchi shartnomasi va Maxfiylik siyosatini diqqat bilan o\'qib chiqishingiz va rozilik bildirishingiz kerak</string>
-    <string name="app_name">MyBackup</string>
+    <string name="app_name">BackupVault</string>
     <string name="welcome_to_use">DataBackupga xush kelibsiz</string>
     <string name="update_records">Yangiliklar</string>
     <string name="environment_detection">Atrof muhitni aniqlash</string>
