@@ -5,9 +5,13 @@ import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.core.view.WindowCompat
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -16,6 +20,7 @@ import com.xayah.core.ui.route.MainRoutes
 import com.xayah.core.ui.theme.DataBackupTheme
 import com.xayah.core.ui.util.LocalNavController
 import com.xayah.core.util.command.BaseUtil
+import com.xayah.databackup.component.BackupVaultBottomBar
 import com.xayah.feature.main.configurations.PageConfigurations
 import com.xayah.feature.main.dashboard.PageDashboard
 import com.xayah.feature.main.details.DetailsRoute
@@ -64,70 +69,78 @@ class MainActivity : AppCompatActivity() {
                     LocalNavController provides navController,
                     androidx.lifecycle.compose.LocalLifecycleOwner provides androidx.compose.ui.platform.LocalLifecycleOwner.current,
                 ) {
-                    AnimatedNavHost(
-                        navController = navController,
-                        startDestination = MainRoutes.Dashboard.route,
-                    ) {
-                        composable(MainRoutes.Dashboard.route) {
-                            PageDashboard()
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        AnimatedNavHost(
+                            navController = navController,
+                            startDestination = MainRoutes.Dashboard.route,
+                        ) {
+                            composable(MainRoutes.Dashboard.route) {
+                                PageDashboard()
+                            }
+                            composable(MainRoutes.List.route) {
+                                ListRoute()
+                            }
+                            composable(MainRoutes.Details.route) {
+                                DetailsRoute()
+                            }
+                            composable(MainRoutes.History.route) {
+                                HistoryRoute()
+                            }
+                            composable(MainRoutes.TaskDetails.route) {
+                                TaskDetailsRoute()
+                            }
+                            composable(MainRoutes.PackagesBackupProcessingGraph.route) {
+                                PackagesBackupProcessingGraph()
+                            }
+                            composable(MainRoutes.PackagesRestoreProcessingGraph.route) {
+                                PackagesRestoreProcessingGraph()
+                            }
+                            composable(MainRoutes.MediumBackupProcessingGraph.route) {
+                                MediumBackupProcessingGraph()
+                            }
+                            composable(MainRoutes.MediumRestoreProcessingGraph.route) {
+                                MediumRestoreProcessingGraph()
+                            }
+                            composable(MainRoutes.Settings.route) {
+                                PageSettings()
+                            }
+                            composable(MainRoutes.Restore.route) {
+                                PageRestore()
+                            }
+                            composable(MainRoutes.Reload.route) {
+                                PageReload()
+                            }
+                            composable(MainRoutes.BackupSettings.route) {
+                                PageBackupSettings()
+                            }
+                            composable(MainRoutes.RestoreSettings.route) {
+                                PageRestoreSettings()
+                            }
+                            composable(MainRoutes.LanguageSettings.route) {
+                                PageLanguageSelector()
+                            }
+                            composable(MainRoutes.BlackList.route) {
+                                PageBlackList()
+                            }
+                            composable(MainRoutes.Configurations.route) {
+                                PageConfigurations()
+                            }
+                            composable(MainRoutes.About.route) {
+                                PageAboutSettings()
+                            }
+                            composable(MainRoutes.Translators.route) {
+                                PageTranslatorsSettings()
+                            }
+                            composable(route = MainRoutes.Directory.route) {
+                                PageDirectory()
+                            }
                         }
-                        composable(MainRoutes.List.route) {
-                            ListRoute()
-                        }
-                        composable(MainRoutes.Details.route) {
-                            DetailsRoute()
-                        }
-                        composable(MainRoutes.History.route) {
-                            HistoryRoute()
-                        }
-                        composable(MainRoutes.TaskDetails.route) {
-                            TaskDetailsRoute()
-                        }
-                        composable(MainRoutes.PackagesBackupProcessingGraph.route) {
-                            PackagesBackupProcessingGraph()
-                        }
-                        composable(MainRoutes.PackagesRestoreProcessingGraph.route) {
-                            PackagesRestoreProcessingGraph()
-                        }
-                        composable(MainRoutes.MediumBackupProcessingGraph.route) {
-                            MediumBackupProcessingGraph()
-                        }
-                        composable(MainRoutes.MediumRestoreProcessingGraph.route) {
-                            MediumRestoreProcessingGraph()
-                        }
-                        composable(MainRoutes.Settings.route) {
-                            PageSettings()
-                        }
-                        composable(MainRoutes.Restore.route) {
-                            PageRestore()
-                        }
-                        composable(MainRoutes.Reload.route) {
-                            PageReload()
-                        }
-                        composable(MainRoutes.BackupSettings.route) {
-                            PageBackupSettings()
-                        }
-                        composable(MainRoutes.RestoreSettings.route) {
-                            PageRestoreSettings()
-                        }
-                        composable(MainRoutes.LanguageSettings.route) {
-                            PageLanguageSelector()
-                        }
-                        composable(MainRoutes.BlackList.route) {
-                            PageBlackList()
-                        }
-                        composable(MainRoutes.Configurations.route) {
-                            PageConfigurations()
-                        }
-                        composable(MainRoutes.About.route) {
-                            PageAboutSettings()
-                        }
-                        composable(MainRoutes.Translators.route) {
-                            PageTranslatorsSettings()
-                        }
-                        composable(route = MainRoutes.Directory.route) {
-                            PageDirectory()
-                        }
+
+                        // Floating Frosted Glass Bottom Navigation Bar
+                        BackupVaultBottomBar(
+                            navController = navController,
+                            modifier = Modifier.align(Alignment.BottomCenter)
+                        )
                     }
                 }
             }

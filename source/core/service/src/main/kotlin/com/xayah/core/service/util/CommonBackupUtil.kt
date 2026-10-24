@@ -44,7 +44,7 @@ class CommonBackupUtil @Inject constructor(
         msg
     }
 
-    fun getItselfDst(dstDir: String) = "${dstDir}/DataBackup.apk"
+    fun getItselfDst(dstDir: String) = "${dstDir}/BackupVault.apk"
 
     suspend fun backupItself(dstDir: String): ShellResult = run {
         log { "Backing up itself..." }

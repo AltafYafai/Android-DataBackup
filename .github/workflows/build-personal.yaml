@@ -41,7 +41,7 @@ jobs:
       - name: Upload APKs
         uses: actions/upload-artifact@v4
         with:
-          name: PersonalAPK
+          name: BackupVault-v1.0
           path: '**/*.apk'
 
       - name: Send APK to Telegram

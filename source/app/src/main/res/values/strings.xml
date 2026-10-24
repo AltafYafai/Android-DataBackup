@@ -221,7 +221,7 @@
     <string name="_default">Default</string>
     <string name="grant_all">Grant all</string>
     <string name="_continue">Continue</string>
-    <string name="app_short_desc">Free and open-source data backup application</string>
+    <string name="app_short_desc">Personal Android backup and restore application by Altaf Yafai</string>
     <string name="required">Required</string>
     <string name="root_permission">Root permission</string>
     <string name="root_permission_desc">Backup and restore app data</string>

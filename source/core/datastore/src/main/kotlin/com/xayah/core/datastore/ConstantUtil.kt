@@ -4,7 +4,7 @@ object ConstantUtil {
     const val STORAGE_EMULATED_PATH = "/storage/emulated"
     private const val DEFAULT_USER_ID = 0
     const val DEFAULT_PATH_PARENT = "${STORAGE_EMULATED_PATH}/${DEFAULT_USER_ID}"
-    const val DEFAULT_PATH_CHILD = "DataBackup"
+    const val DEFAULT_PATH_CHILD = "BackupVault"
     const val DEFAULT_PATH = "${DEFAULT_PATH_PARENT}/${DEFAULT_PATH_CHILD}"
     const val DEFAULT_IDLE_TIMEOUT = -1
     const val DEFAULT_TIMEOUT = 30000
@@ -31,12 +31,12 @@ object ConstantUtil {
         "Download" to "${DEFAULT_PATH_PARENT}/Download",
     )
 
-    const val DOC_LINK = "https://DataBackupOfficial.github.io"
-    const val GITHUB_LINK = "https://github.com/XayahSuSuSu/Android-DataBackup"
-    const val CHAT_LINK = "https://t.me/databackupchat"
-    const val DONATE_BMAC_LINK = "https://buymeacoffee.com/xayahsususu"
-    const val DONATE_PAYPAL_LINK = "https://paypal.me/XayahSuSuSu"
-    const val DONATE_AFD_LINK = "https://afdian.net/a/XayahSuSuSu"
+    const val DOC_LINK = "https://github.com/AltafYafai/Android-DataBackup"
+    const val GITHUB_LINK = "https://github.com/AltafYafai/Android-DataBackup"
+    const val CHAT_LINK = "https://github.com/AltafYafai/Android-DataBackup/issues"
+    const val DONATE_BMAC_LINK = "https://github.com/AltafYafai"
+    const val DONATE_PAYPAL_LINK = "https://github.com/AltafYafai"
+    const val DONATE_AFD_LINK = "https://github.com/AltafYafai"
 
     const val FLAVOR_PREMIUM = "premium"
 }

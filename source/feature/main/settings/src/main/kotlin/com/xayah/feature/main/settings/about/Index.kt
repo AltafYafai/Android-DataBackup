@@ -97,55 +97,18 @@ fun PageAboutSettings() {
                     ),
                     color = ThemedColorSchemeKeyTokens.OnSurfaceVariant.value
                 )
+                BodyMediumText(
+                    modifier = Modifier.paddingHorizontal(SizeTokens.Level24).paddingTop(SizeTokens.Level8),
+                    text = "Personal Android Backup & Restore project maintained by Altaf Yafai.",
+                    color = ThemedColorSchemeKeyTokens.OnSurfaceVariant.value,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
                 FlowRow(
                     modifier = Modifier.paddingTop(SizeTokens.Level16),
-                    horizontalArrangement = Arrangement.spacedBy(SizeTokens.Level8),
+                    horizontalArrangement = Arrangement.spacedBy(SizeTokens.Level12),
                     maxItemsInEachRow = 2
                 ) {
-                    Box(modifier = Modifier.wrapContentSize(Alignment.Center)) {
-                        var expanded by remember { mutableStateOf(false) }
-                        FilledTonalIconTextButton(
-                            modifier = Modifier.width(SizeTokens.Level128),
-                            icon = Icons.Outlined.FavoriteBorder,
-                            text = stringResource(id = R.string.donate)
-                        ) {
-                            expanded = true
-                        }
-                        ModalActionDropdownMenu(expanded = expanded, actionList = listOf(
-//                            ActionMenuItem(
-//                                title = stringResource(id = R.string.buymeacoffee),
-//                                enabled = true,
-//                                secondaryMenu = listOf(),
-//                                onClick = {
-//                                    viewModel.emitIntentOnIO(IndexUiIntent.ToBrowser(context, ConstantUtil.DONATE_BMAC_LINK))
-//                                }
-//                            ),
-                            ActionMenuItem(
-                                title = stringResource(id = R.string.paypal),
-                                enabled = true,
-                                secondaryMenu = listOf(),
-                                onClick = {
-                                    viewModel.emitIntentOnIO(IndexUiIntent.ToBrowser(context, ConstantUtil.DONATE_PAYPAL_LINK))
-                                }
-                            ),
-                            ActionMenuItem(
-                                title = stringResource(id = R.string.afdian),
-                                enabled = true,
-                                secondaryMenu = listOf(),
-                                onClick = {
-                                    viewModel.emitIntentOnIO(IndexUiIntent.ToBrowser(context, ConstantUtil.DONATE_AFD_LINK))
-                                }
-                            )
-                        ), onDismissRequest = { expanded = false })
-                    }
                     FilledTonalIconTextButton(
-                        modifier = Modifier.width(SizeTokens.Level128),
-                        icon = Icons.Outlined.Assignment,
-                        text = stringResource(id = R.string.docs)
-                    ) {
-                        viewModel.emitIntentOnIO(IndexUiIntent.ToBrowser(context, ConstantUtil.DOC_LINK))
-                    }
-                    OutlinedButtonIconTextButton(
                         modifier = Modifier.width(SizeTokens.Level128),
                         icon = Icons.Outlined.Code,
                         text = stringResource(id = R.string.github)

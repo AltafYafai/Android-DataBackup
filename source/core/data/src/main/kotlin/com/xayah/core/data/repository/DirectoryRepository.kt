@@ -79,13 +79,21 @@ class DirectoryRepository @Inject constructor(
             directoryDao.updateActive(active = false)
 
             // Internal storage
+            val normalizedDefaultParent = DEFAULT_PATH_PARENT.trimEnd('/')
             val internalList = rootService.listFilePaths(ConstantUtil.STORAGE_EMULATED_PATH, listFiles = false)
-                .filter { it.substring(it.lastIndexOf("/") + 1).toIntOrNull() != null }.toMutableList() // Just select 0 10 999 etc.
-            if (internalList.contains(DEFAULT_PATH_PARENT).not()) {
-                internalList.add(DEFAULT_PATH_PARENT)
+                .map { it.trimEnd('/') }
+                .filter { it.substringAfterLast("/").toIntOrNull() != null }
+                .distinct()
+                .toMutableList()
+            if (internalList.contains(normalizedDefaultParent).not()) {
+                internalList.add(normalizedDefaultParent)
             }
+            val uniqueParents = internalList.distinct()
+
+            directoryDao.cleanObsoleteInternal(ConstantUtil.DEFAULT_PATH_CHILD)
+
             val internalDirs = mutableListOf<DirectoryUpsertEntity>()
-            for (storageItem in internalList) {
+            for (storageItem in uniqueParents) {
                 // e.g. /data/media/0
                 runCatching {
                     val child = ConstantUtil.DEFAULT_PATH_CHILD
@@ -96,6 +104,7 @@ class DirectoryRepository @Inject constructor(
                             parent = storageItem,
                             child = child,
                             storageType = StorageType.INTERNAL,
+                            active = true,
                         )
                     )
                 }
@@ -125,6 +134,7 @@ class DirectoryRepository @Inject constructor(
 
             // Activate backup/restore directories except external directories
             directoryDao.updateActive(excludeType = StorageType.EXTERNAL, active = true)
+            directoryDao.cleanObsoleteInternal(ConstantUtil.DEFAULT_PATH_CHILD)
 
             // Read statFs of each storage
             directoryDao.queryActiveDirectories().forEach { entity ->
