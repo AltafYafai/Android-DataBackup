@@ -35,34 +35,24 @@ android {
             versionCode = 4 + (android.defaultConfig.versionCode ?: 0)
             ndk.abiFilters.add("arm64-v8a")
         }
-        create("armeabi-v7a") {
-            dimension = "abi"
-            versionCode = 3 + (android.defaultConfig.versionCode ?: 0)
-            ndk.abiFilters.add("armeabi-v7a")
-        }
-        create("x86_64") {
-            dimension = "abi"
-            versionCode = 2 + (android.defaultConfig.versionCode ?: 0)
-            ndk.abiFilters.add("x86_64")
-        }
-        create("x86") {
-            dimension = "abi"
-            versionCode = 1 + (android.defaultConfig.versionCode ?: 0)
-            ndk.abiFilters.add("x86")
-        }
         create("foss") {
             dimension = "feature"
             applicationIdSuffix = ".foss"
         }
-        create("premium") {
-            dimension = "feature"
-            applicationIdSuffix = ".premium"
+    }
+
+    signingConfigs {
+        create("personal") {
+            storeFile = file("../../ci/personal-debug.p12")
+            storePassword = "mybackup"
+            keyAlias = "personalkey"
+            keyPassword = "mybackup"
+            storeType = "PKCS12"
         }
-        create("alpha") {
-            dimension = "feature"
-            applicationIdSuffix = ".alpha"
-            versionCode = libs.versions.versionCodeAlpha.get().toInt()
-            versionName = libs.versions.versionCodeAlpha.get()
+    }
+    buildTypes {
+        getByName("debug") {
+            signingConfig = signingConfigs.getByName("personal")
         }
     }
 
@@ -125,9 +115,6 @@ dependencies {
     implementation(project(":feature:crash"))
     implementation(project(":feature:setup"))
     "fossImplementation"(project(":feature:flavor:foss"))
-    "premiumImplementation"(project(":feature:flavor:premium"))
-    "alphaImplementation"(project(":feature:flavor:alpha"))
-    "alphaImplementation"(project(":feature:flavor:foss"))
     implementation(project(":feature:main:dashboard"))
     implementation(project(":feature:main:restore"))
     implementation(project(":feature:main:cloud"))

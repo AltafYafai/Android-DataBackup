@@ -65,7 +65,6 @@ fun PageRestore() {
     val viewModel = hiltViewModel<IndexViewModel>()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val lastRestoreTime by viewModel.lastRestoreTimeState.collectAsStateWithLifecycle()
-    val accounts by viewModel.accounts.collectAsStateWithLifecycle()
 
     LaunchedEffect(null) {
         viewModel.launchOnIO {

@@ -71,7 +71,6 @@ fun PageMediumBackupProcessingSetup(localNavController: NavHostController, viewM
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
-    val accounts by viewModel.accounts.collectAsStateWithLifecycle()
     val isTesting by viewModel.isTesting.collectAsStateWithLifecycle()
     val mediumSize by viewModel.mediumSize.collectAsStateWithLifecycle()
 
