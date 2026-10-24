@@ -139,16 +139,16 @@ fun MediaIconImage(enabled: Boolean = true, name: String, textStyle: TextStyle =
 }
 
 @Composable
-fun AppIcon(modifier: Modifier = Modifier) {
+fun AppIcon(modifier: Modifier = Modifier, size: Dp = SizeTokens.Level128) {
     Box(
         modifier = modifier
-            .size(SizeTokens.Level128)
+            .size(size)
             .clip(CircleShape)
             .background(colorResource(id = R.color.ic_launcher_background)),
         contentAlignment = Alignment.Center
     ) {
         Image(
-            modifier = Modifier.size(SizeTokens.Level100),
+            modifier = Modifier.size(size * 0.78f),
             imageVector = ImageVector.vectorResource(id = R.drawable.ic_launcher_foreground_tonal),
             contentDescription = null
         )

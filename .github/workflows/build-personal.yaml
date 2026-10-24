@@ -53,6 +53,15 @@ jobs:
             echo "::warning::TG_BOT_TOKEN or TG_CHAT_ID not set - skipping Telegram upload"
             exit 0
           fi
+          # Sanitize token: strip leading 'bot' if present, strip whitespace and quotes
+          CLEAN_TOKEN="${TG_BOT_TOKEN#bot}"
+          CLEAN_TOKEN="$(echo -n "$CLEAN_TOKEN" | tr -d '[:space:]' | tr -d '"' | tr -d "'")"
+          CLEAN_CHAT="$(echo -n "$TG_CHAT_ID" | tr -d '[:space:]' | tr -d '"' | tr -d "'")"
+
+          echo "Bot token length: ${#CLEAN_TOKEN}, Chat ID: ${CLEAN_CHAT}"
+          ME_CHECK=$(curl -sS "https://api.telegram.org/bot${CLEAN_TOKEN}/getMe" || true)
+          echo "Telegram getMe response: $ME_CHECK"
+
           APK_FILE=$(ls -1 -- *.apk | head -n 1)
           CAPTION=$(printf 'BackupVault %s\ncommit: %s\nrun: %s/%s/actions/runs/%s\nbuilt %s' \
             "$APK_FILE" \
@@ -60,10 +69,10 @@ jobs:
             "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" \
             "$(date -u '+%Y-%m-%d %H:%M UTC')")
           RESPONSE=$(curl -sS --max-time 620 \
-            -F chat_id="${TG_CHAT_ID}" \
+            -F chat_id="${CLEAN_CHAT}" \
             -F caption="${CAPTION}" \
             -F "document=@${APK_FILE}" \
-            "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendDocument" 2>curl_err.txt) || true
+            "https://api.telegram.org/bot${CLEAN_TOKEN}/sendDocument" 2>curl_err.txt) || true
           if echo "$RESPONSE" | grep -q '"ok":true'; then
             echo "Telegram upload OK: $APK_FILE"
           else

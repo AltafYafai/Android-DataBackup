@@ -153,3 +153,72 @@ fun QuickActionsButton(
         AutoLabelLargeText(modifier = Modifier.weight(1f), text = title, color = onColorContainer.value.withState(enabled), enabled = enabled)
     }
 }
+
+@ExperimentalFoundationApi
+@ExperimentalMaterial3Api
+@Composable
+fun DashboardActionTile(
+    modifier: Modifier = Modifier,
+    enabled: Boolean,
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    colorContainer: ThemedColorSchemeKeyTokens,
+    onColorContainer: ThemedColorSchemeKeyTokens,
+    onClick: () -> Unit = {},
+) {
+    val interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+    androidx.compose.material3.Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(SizeTokens.Level20),
+        color = ThemedColorSchemeKeyTokens.SurfaceContainerLowest.value.withState(enabled),
+        tonalElevation = SizeTokens.Level1,
+        shadowElevation = SizeTokens.Level1,
+        border = androidx.compose.foundation.BorderStroke(androidx.compose.ui.unit.Dp(1f), ThemedColorSchemeKeyTokens.OutlineVariant.value.copy(alpha = 0.5f)),
+        onClick = onClick,
+        enabled = enabled,
+        interactionSource = interactionSource,
+    ) {
+        androidx.compose.foundation.layout.Row(
+            modifier = Modifier
+                .padding(SizeTokens.Level16)
+                .fillMaxWidth(),
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(SizeTokens.Level16)
+        ) {
+            androidx.compose.material3.Surface(
+                modifier = Modifier.size(SizeTokens.Level48),
+                shape = androidx.compose.foundation.shape.CircleShape,
+                color = colorContainer.value.withState(enabled),
+            ) {
+                androidx.compose.foundation.layout.Box(contentAlignment = androidx.compose.ui.Alignment.Center) {
+                    Icon(
+                        modifier = Modifier.size(SizeTokens.Level24),
+                        imageVector = icon,
+                        tint = onColorContainer.value.withState(enabled),
+                        contentDescription = null,
+                    )
+                }
+            }
+
+            androidx.compose.foundation.layout.Column(modifier = Modifier.weight(1f)) {
+                com.xayah.core.ui.component.TitleMediumText(
+                    text = title,
+                    color = ThemedColorSchemeKeyTokens.OnSurface.value.withState(enabled),
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                )
+                BodyMediumText(
+                    modifier = Modifier.paddingTop(SizeTokens.Level2),
+                    text = subtitle,
+                    color = ThemedColorSchemeKeyTokens.OnSurfaceVariant.value.withState(enabled)
+                )
+            }
+
+            Icon(
+                imageVector = Icons.Rounded.KeyboardArrowRight,
+                tint = ThemedColorSchemeKeyTokens.Outline.value.withState(enabled),
+                contentDescription = null
+            )
+        }
+    }
+}

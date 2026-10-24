@@ -54,8 +54,17 @@ fun MainIndexSubScaffold(
         topBar = {
             TopAppBar(
                 title = {
-                    Row(modifier = Modifier.height(IntrinsicSize.Min), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(SizeTokens.Level8)) {
-                        Text(text = title)
+                    Row(
+                        modifier = Modifier.height(IntrinsicSize.Min),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(SizeTokens.Level10)
+                    ) {
+                        AppIcon(size = SizeTokens.Level32)
+                        Text(
+                            text = title,
+                            style = androidx.compose.material3.MaterialTheme.typography.titleLarge,
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                        )
 
                         BadgedBox(
                             badge = {

@@ -136,78 +136,50 @@ fun PageDashboard() {
             }
 
             Section(title = stringResource(id = R.string.quick_actions)) {
-                FlowRow(
+                Column(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(SizeTokens.Level8),
-                    verticalArrangement = Arrangement.spacedBy(SizeTokens.Level8),
-                    maxItemsInEachRow = 2,
+                    verticalArrangement = Arrangement.spacedBy(SizeTokens.Level12),
                 ) {
-                    QuickActionsButton(
-                        modifier = Modifier.weight(1f),
+                    DashboardActionTile(
                         enabled = nullBackupDir.not(),
                         title = stringResource(id = R.string.backup_apps),
-                        icon = ImageVector.vectorResource(id = R.drawable.ic_rounded_acute),
+                        subtitle = "Applications, user data, and external storage",
+                        icon = ImageVector.vectorResource(id = R.drawable.ic_rounded_package_2),
                         colorContainer = ThemedColorSchemeKeyTokens.PrimaryContainer,
-                        colorL80D20 = ThemedColorSchemeKeyTokens.PrimaryL80D20,
                         onColorContainer = ThemedColorSchemeKeyTokens.OnPrimaryContainer
                     ) {
                         navController.navigateSingle(MainRoutes.List.getRoute(target = Target.Apps, opType = OpType.BACKUP))
                     }
-                    QuickActionsButton(
-                        modifier = Modifier.weight(1f),
+                    DashboardActionTile(
                         enabled = nullBackupDir.not(),
                         title = stringResource(id = R.string.backup_files),
-                        icon = ImageVector.vectorResource(id = R.drawable.ic_rounded_acute),
+                        subtitle = "Media files, documents, and device folders",
+                        icon = ImageVector.vectorResource(id = R.drawable.ic_rounded_folder_open),
                         colorContainer = ThemedColorSchemeKeyTokens.SecondaryContainer,
-                        colorL80D20 = ThemedColorSchemeKeyTokens.SecondaryL80D20,
                         onColorContainer = ThemedColorSchemeKeyTokens.OnSecondaryContainer
                     ) {
                         navController.navigateSingle(MainRoutes.List.getRoute(target = Target.Files, opType = OpType.BACKUP))
                     }
-                    // TODO MMS/SMS, Contacts backup/restore
-//                    QuickActionsButton(
-//                        modifier = Modifier.weight(1f),
-//                        enabled = false,
-//                        title = stringResource(id = R.string.backup_messages),
-//                        icon = ImageVector.vectorResource(id = R.drawable.ic_rounded_acute),
-//                        colorContainer = ThemedColorSchemeKeyTokens.BluePrimaryContainer,
-//                        colorL80D20 = ThemedColorSchemeKeyTokens.BlueL80D20,
-//                        onColorContainer = ThemedColorSchemeKeyTokens.BlueOnPrimaryContainer
-//                    )
-//                    QuickActionsButton(
-//                        modifier = Modifier.weight(1f),
-//                        enabled = false,
-//                        title = stringResource(id = R.string.backup_contacts),
-//                        icon = ImageVector.vectorResource(id = R.drawable.ic_rounded_acute),
-//                        colorContainer = ThemedColorSchemeKeyTokens.GreenPrimaryContainer,
-//                        colorL80D20 = ThemedColorSchemeKeyTokens.GreenL80D20,
-//                        onColorContainer = ThemedColorSchemeKeyTokens.GreenOnPrimaryContainer
-//                    )
-                    QuickActionsButton(
-                        modifier = Modifier.weight(1f),
+                    DashboardActionTile(
                         enabled = nullBackupDir.not(),
                         title = stringResource(id = R.string.restore),
+                        subtitle = "Restore applications & data from previous snapshots",
                         icon = ImageVector.vectorResource(id = R.drawable.ic_rounded_history),
                         colorContainer = ThemedColorSchemeKeyTokens.TertiaryContainer,
-                        colorL80D20 = ThemedColorSchemeKeyTokens.TertiaryL80D20,
-                        onColorContainer = ThemedColorSchemeKeyTokens.OnTertiaryContainer,
-                        actionIcon = Icons.Rounded.KeyboardArrowRight
+                        onColorContainer = ThemedColorSchemeKeyTokens.OnTertiaryContainer
                     ) {
                         navController.navigateSingle(MainRoutes.Restore.route)
                     }
-                    QuickActionsButton(
-                        modifier = Modifier.weight(1f),
+                    DashboardActionTile(
                         enabled = nullBackupDir.not(),
                         title = stringResource(R.string.history),
+                        subtitle = "Past backup logs, speed records, and details",
                         icon = Icons.Rounded.ListAlt,
                         colorContainer = ThemedColorSchemeKeyTokens.SurfaceContainerHigh,
-                        colorL80D20 = ThemedColorSchemeKeyTokens.SurfaceContainerHighest,
-                        onColorContainer = ThemedColorSchemeKeyTokens.OnSurface,
-                        actionIcon = Icons.Rounded.KeyboardArrowRight
+                        onColorContainer = ThemedColorSchemeKeyTokens.OnSurface
                     ) {
                         navController.navigateSingle(MainRoutes.History.route)
                     }
-                    Spacer(modifier = Modifier.weight(1f))
                 }
             }
         }
