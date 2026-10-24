@@ -35,7 +35,7 @@
     <string name="manifest">Manifiesto</string>
     <string name="selected_apks">APKs seleccionadas</string>
     <string name="selected_data">Datos seleccionados</string>
-    <string name="app_name">DataBackup</string>
+    <string name="app_name">MyBackup</string>
     <string name="start_desc">Todos los datos generados por esta aplicación solo se utilizan para copia de seguridad/restauración y solo se almacenan localmente.</string>
     <string name="network_desc">Se utiliza para obtener información sobre actualizaciones y análisis de aplicaciones</string>
     <string name="application_desc">Obtener información del paquete de la aplicación, utilizada para generar la lista de copias de seguridad y obtener el tamaño de los datos de la aplicación</string>

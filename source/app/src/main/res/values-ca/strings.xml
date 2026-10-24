@@ -130,7 +130,7 @@
     <string name="_continue">Continúa</string>
     <string name="app_short_desc">Aplicació de còpia de seguretat de dades gratuïta i de codi obert</string>
     <string name="required">Requerit</string>
-    <string name="app_name">DataBackup</string>
+    <string name="app_name">MyBackup</string>
     <string name="environment_detection">Detecció de l\'entorn</string>
     <string name="start_subtitle">D\'acord amb les polítiques, heu de llegir atentament i acceptar el següent Acord d\'Usuari i la Política de Privadesa abans de començar a utilitzar aquesta aplicació</string>
     <string name="third_party">De tercers</string>

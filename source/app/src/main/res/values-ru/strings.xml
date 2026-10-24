@@ -141,7 +141,7 @@
     <string name="cloud">Облако</string>
     <string name="modify">Изменение</string>
     <string name="settings">Настройки</string>
-    <string name="app_name">DataBackup</string>
+    <string name="app_name">MyBackup</string>
     <string name="system">Системные</string>
     <string name="please_set_up_main_account">Настройте основной аккаунт</string>
     <string name="uploading">Выгрузка</string>

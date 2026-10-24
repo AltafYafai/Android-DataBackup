@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">AdatMentés</string>
+    <string name="app_name">MyBackup</string>
     <string name="welcome_to_use">Üdvözlünk a DataBackup-nál</string>
     <string name="storage">Tárhely</string>
     <string name="application_desc">Alkalmazási csomaginformációk megszerzéséhez, ami szükséges a biztonsági mentési lista létrehozásához és az alkalmazási adatok méretének meghatározásához</string>

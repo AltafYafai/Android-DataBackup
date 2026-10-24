@@ -58,7 +58,7 @@
     <string name="integral">Цілісно</string>
     <string name="wait_for_remaining_data_processing">Обробка решти даних…</string>
     <string name="not_exist_and_skip">Не існує, пропуск</string>
-    <string name="app_name">DataBackup</string>
+    <string name="app_name">MyBackup</string>
     <string name="environment_detection">Виявлення середовища</string>
     <string name="succeed">Успішно</string>
     <string name="word_return">Повернутися</string>

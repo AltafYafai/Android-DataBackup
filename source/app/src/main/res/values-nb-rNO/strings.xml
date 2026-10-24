@@ -114,7 +114,7 @@
     <string name="backup_dir_as_media_error">Kan ikke legge til sikkerhetskopimappe som media</string>
     <string name="backup_user">Sikkerhetskopieringsbruker</string>
     <string name="keep_screen_on_desc">Hold enheten påslått under behandling</string>
-    <string name="app_name">DataSikkerhetskopi</string>
+    <string name="app_name">MyBackup</string>
     <string name="no_browser">Kanskje det ikke finnes noen filbehandler for åpning\?</string>
     <string name="succeed">Vellykket</string>
     <string name="compression_test_desc">Test om arkivet er ødelagt etter det blir laget</string>

@@ -270,7 +270,7 @@
     <string name="share">Deli</string>
     <string name="theme_dark_desc">Uvek tamni način</string>
     <string name="grant_ntfy_perm_manually">Ručno dodeli dozvolu za obavesti</string>
-    <string name="app_name">DataBackup</string>
+    <string name="app_name">MyBackup</string>
     <string name="welcome_to_use">Добродошли у DataBackup</string>
     <string name="update_records">Ажурирај записе</string>
     <string name="environment_detection">Препознавање окружења</string>

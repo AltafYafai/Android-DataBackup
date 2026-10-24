@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <string name="app_name">데이터백업</string>
+    <string name="app_name">MyBackup</string>
     <string name="welcome_to_use">데이터 백업 시작</string>
     <string name="update_records">레코드 업데이트</string>
     <string name="environment_detection">환경검출</string>

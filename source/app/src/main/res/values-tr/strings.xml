@@ -89,7 +89,7 @@
     <string name="compression_type">Sıkıştırma türü</string>
     <string name="backup_user">Kullanıcıyı yedekle</string>
     <string name="keep_screen_on_desc">İşlem sırasında cihazı açık tutar</string>
-    <string name="app_name">DataBackup</string>
+    <string name="app_name">MyBackup</string>
     <string name="environment_detection">Ortam algılama</string>
     <string name="succeed">Tamamlandı</string>
     <string name="compression_test_desc">Oluşturulduktan sonra sıkıştırılmış arşivlerin çalışıp çalışmadığını kontrol edin</string>
