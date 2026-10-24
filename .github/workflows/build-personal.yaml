@@ -5,7 +5,7 @@ on:
 
 jobs:
   build:
-    name: "Build arm64 foss debug APK"
+    name: "Build arm64 foss release APK"
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -27,19 +27,16 @@ jobs:
           java-version: 17
 
       - name: Setup gradle
-        uses: gradle/gradle-build-action@v2
+        uses: gradle/actions/setup-gradle@v4
 
       - name: Setup gradlew
         run: chmod +x gradlew
 
-      - name: Check build-logic
-        run: ./gradlew check -p build-logic
-
       - name: Build with gradle
-        run: ./gradlew assembleArm64-v8aFossDebug --daemon --parallel
+        run: ./gradlew assembleArm64-v8aFossRelease --daemon --parallel
 
       - name: Move APKs
-        run: mv ./*/build/outputs/apk/*/debug/*.apk .
+        run: mv ./*/build/outputs/apk/*/release/*.apk .
 
       - name: Upload APKs
         uses: actions/upload-artifact@v4

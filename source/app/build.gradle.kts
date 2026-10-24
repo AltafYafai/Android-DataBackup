@@ -54,6 +54,9 @@ android {
         getByName("debug") {
             signingConfig = signingConfigs.getByName("personal")
         }
+        getByName("release") {
+            signingConfig = signingConfigs.getByName("personal")
+        }
     }
 
     applicationVariants.all {
