@@ -1,6 +1,7 @@
 package com.xayah.feature.main.list
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -16,6 +18,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.rounded.Folder
@@ -35,6 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.unit.Dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.xayah.core.model.OpType
@@ -86,7 +90,7 @@ fun LazyListScope.listItems(
         is ListItemsUiState.Success.Apps -> {
             items(items = uiState.appList, key = { it.id }) { item ->
                 val navController = LocalNavController.current!!
-                Row(modifier = Modifier.animateItemPlacement()) {
+                Row(modifier = Modifier.animateItemPlacement().fillMaxWidth()) {
                     AppItem(
                         opType = uiState.opType,
                         id = item.id,
@@ -108,7 +112,7 @@ fun LazyListScope.listItems(
         is ListItemsUiState.Success.Files -> {
             items(items = uiState.fileList, key = { it.id }) { item ->
                 val navController = LocalNavController.current!!
-                Row(modifier = Modifier.animateItemPlacement()) {
+                Row(modifier = Modifier.animateItemPlacement().fillMaxWidth()) {
                     FileItem(
                         id = item.id,
                         name = item.name,
@@ -142,31 +146,50 @@ fun AppItem(
     onSelectedChanged: (Long, Boolean) -> Unit,
     onClick: () -> Unit,
 ) {
-    Surface(onClick = onClick) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = SizeTokens.Level12, vertical = SizeTokens.Level4),
+        shape = RoundedCornerShape(SizeTokens.Level16),
+        color = if (selected) ThemedColorSchemeKeyTokens.SurfaceContainerHighest.value else ThemedColorSchemeKeyTokens.SurfaceContainerLowest.value,
+        tonalElevation = if (selected) SizeTokens.Level2 else SizeTokens.Level1,
+        border = BorderStroke(
+            Dp(1f),
+            if (selected) ThemedColorSchemeKeyTokens.Primary.value.copy(alpha = 0.5f)
+            else ThemedColorSchemeKeyTokens.OutlineVariant.value.copy(alpha = 0.35f)
+        ),
+        onClick = onClick
+    ) {
         Row(
             modifier = Modifier
+                .fillMaxWidth()
                 .height(IntrinsicSize.Min)
-                .padding(SizeTokens.Level16),
+                .padding(horizontal = SizeTokens.Level16, vertical = SizeTokens.Level12),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(SizeTokens.Level16)
         ) {
-            PackageIconImage(packageName = packageName, size = SizeTokens.Level32)
+            PackageIconImage(packageName = packageName, size = SizeTokens.Level40)
 
             Column(modifier = Modifier.weight(1f)) {
                 TitleLargeText(text = label.ifEmpty { stringResource(id = R.string.unknown) }, maxLines = 1)
                 BodyMediumText(text = packageName, color = ThemedColorSchemeKeyTokens.Outline.value, maxLines = 1)
             }
 
-            Row(modifier = Modifier.height(IntrinsicSize.Min)) {
+            Row(modifier = Modifier.height(IntrinsicSize.Min), verticalAlignment = Alignment.CenterVertically) {
                 if (preserveId != 0L) {
-                    Icon(modifier = Modifier.fillMaxHeight(), imageVector = Icons.Outlined.Shield, contentDescription = null)
+                    Icon(
+                        modifier = Modifier.size(SizeTokens.Level24),
+                        imageVector = Icons.Outlined.Shield,
+                        tint = ThemedColorSchemeKeyTokens.Primary.value,
+                        contentDescription = null
+                    )
                 }
                 AnimatedDataIndicator(flag) {
                     onChangeFlag(id, flag)
                 }
             }
             VerticalDivider(
-                modifier = Modifier.height(SizeTokens.Level32)
+                modifier = Modifier.height(SizeTokens.Level24)
             )
             Checkbox(
                 checked = selected,
@@ -187,28 +210,47 @@ fun FileItem(
     onSelectedChanged: (Long, Boolean) -> Unit,
     onClick: () -> Unit,
 ) {
-    Surface(onClick = onClick) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = SizeTokens.Level12, vertical = SizeTokens.Level4),
+        shape = RoundedCornerShape(SizeTokens.Level16),
+        color = if (selected) ThemedColorSchemeKeyTokens.SurfaceContainerHighest.value else ThemedColorSchemeKeyTokens.SurfaceContainerLowest.value,
+        tonalElevation = if (selected) SizeTokens.Level2 else SizeTokens.Level1,
+        border = BorderStroke(
+            Dp(1f),
+            if (selected) ThemedColorSchemeKeyTokens.Primary.value.copy(alpha = 0.5f)
+            else ThemedColorSchemeKeyTokens.OutlineVariant.value.copy(alpha = 0.35f)
+        ),
+        onClick = onClick
+    ) {
         Row(
             modifier = Modifier
+                .fillMaxWidth()
                 .height(IntrinsicSize.Min)
-                .padding(SizeTokens.Level16),
+                .padding(horizontal = SizeTokens.Level16, vertical = SizeTokens.Level12),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(SizeTokens.Level16)
         ) {
-            PackageIconImage(icon = Icons.Rounded.Folder, packageName = "", inCircleShape = true, size = SizeTokens.Level32)
+            PackageIconImage(icon = Icons.Rounded.Folder, packageName = "", inCircleShape = true, size = SizeTokens.Level40)
 
             Column(modifier = Modifier.weight(1f)) {
                 TitleLargeText(text = name.ifEmpty { stringResource(id = R.string.unknown) }, maxLines = 1)
                 BodyMediumText(text = path, color = ThemedColorSchemeKeyTokens.Outline.value, maxLines = 1)
             }
 
-            Row(modifier = Modifier.height(IntrinsicSize.Min)) {
+            Row(modifier = Modifier.height(IntrinsicSize.Min), verticalAlignment = Alignment.CenterVertically) {
                 if (preserveId != 0L) {
-                    Icon(modifier = Modifier.fillMaxHeight(), imageVector = Icons.Outlined.Shield, contentDescription = null)
+                    Icon(
+                        modifier = Modifier.size(SizeTokens.Level24),
+                        imageVector = Icons.Outlined.Shield,
+                        tint = ThemedColorSchemeKeyTokens.Primary.value,
+                        contentDescription = null
+                    )
                 }
             }
             VerticalDivider(
-                modifier = Modifier.height(SizeTokens.Level32)
+                modifier = Modifier.height(SizeTokens.Level24)
             )
             Checkbox(
                 checked = selected,

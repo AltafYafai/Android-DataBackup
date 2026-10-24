@@ -1,27 +1,43 @@
 package com.xayah.feature.main.dashboard
 
 import android.annotation.SuppressLint
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.rounded.KeyboardArrowRight
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import com.xayah.core.ui.component.ActionButton
 import com.xayah.core.ui.component.AutoLabelLargeText
 import com.xayah.core.ui.component.BodyMediumText
 import com.xayah.core.ui.component.OverviewCard
 import com.xayah.core.ui.component.SegmentProgressIndicator
 import com.xayah.core.ui.component.TitleLargeText
+import com.xayah.core.ui.component.TitleMediumText
 import com.xayah.core.ui.component.paddingBottom
 import com.xayah.core.ui.component.paddingTop
 import com.xayah.core.ui.model.SegmentProgress
@@ -167,31 +183,31 @@ fun DashboardActionTile(
     onColorContainer: ThemedColorSchemeKeyTokens,
     onClick: () -> Unit = {},
 ) {
-    val interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
-    androidx.compose.material3.Surface(
+    val interactionSource = remember { MutableInteractionSource() }
+    Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(SizeTokens.Level20),
+        shape = RoundedCornerShape(SizeTokens.Level20),
         color = ThemedColorSchemeKeyTokens.SurfaceContainerLowest.value.withState(enabled),
         tonalElevation = SizeTokens.Level1,
         shadowElevation = SizeTokens.Level1,
-        border = androidx.compose.foundation.BorderStroke(androidx.compose.ui.unit.Dp(1f), ThemedColorSchemeKeyTokens.OutlineVariant.value.copy(alpha = 0.5f)),
+        border = BorderStroke(Dp(1f), ThemedColorSchemeKeyTokens.OutlineVariant.value.copy(alpha = 0.5f)),
         onClick = onClick,
         enabled = enabled,
         interactionSource = interactionSource,
     ) {
-        androidx.compose.foundation.layout.Row(
+        Row(
             modifier = Modifier
                 .padding(SizeTokens.Level16)
                 .fillMaxWidth(),
-            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(SizeTokens.Level16)
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(SizeTokens.Level16)
         ) {
-            androidx.compose.material3.Surface(
+            Surface(
                 modifier = Modifier.size(SizeTokens.Level48),
-                shape = androidx.compose.foundation.shape.CircleShape,
+                shape = CircleShape,
                 color = colorContainer.value.withState(enabled),
             ) {
-                androidx.compose.foundation.layout.Box(contentAlignment = androidx.compose.ui.Alignment.Center) {
+                Box(contentAlignment = Alignment.Center) {
                     Icon(
                         modifier = Modifier.size(SizeTokens.Level24),
                         imageVector = icon,
@@ -201,11 +217,11 @@ fun DashboardActionTile(
                 }
             }
 
-            androidx.compose.foundation.layout.Column(modifier = Modifier.weight(1f)) {
-                com.xayah.core.ui.component.TitleMediumText(
+            Column(modifier = Modifier.weight(1f)) {
+                TitleMediumText(
                     text = title,
                     color = ThemedColorSchemeKeyTokens.OnSurface.value.withState(enabled),
-                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                    fontWeight = FontWeight.Bold
                 )
                 BodyMediumText(
                     modifier = Modifier.paddingTop(SizeTokens.Level2),

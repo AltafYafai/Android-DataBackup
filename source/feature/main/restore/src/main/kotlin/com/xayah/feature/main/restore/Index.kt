@@ -115,32 +115,34 @@ fun PageRestore() {
                 }
             }
 
-            val appsInteractionSource = remember { MutableInteractionSource() }
-            Clickable(
-                title = stringResource(id = R.string.apps),
-                value = if (uiState.packages.isEmpty()) null else
-                    "${context.getString(R.string.args_apps_backed_up, uiState.packages.size)}${if (uiState.packagesSize.isNotEmpty()) " (${uiState.packagesSize})" else ""}",
-                leadingIcon = ImageVector.vectorResource(id = R.drawable.ic_rounded_apps),
-                interactionSource = appsInteractionSource,
-                content = if (uiState.packages.isEmpty()) null else {
-                    {
-                        PackageIcons(modifier = Modifier.paddingTop(SizeTokens.Level8), packages = uiState.packages)
+            Title(title = stringResource(id = R.string.restore)) {
+                val appsInteractionSource = remember { MutableInteractionSource() }
+                Clickable(
+                    title = stringResource(id = R.string.apps),
+                    value = if (uiState.packages.isEmpty()) null else
+                        "${context.getString(R.string.args_apps_backed_up, uiState.packages.size)}${if (uiState.packagesSize.isNotEmpty()) " (${uiState.packagesSize})" else ""}",
+                    leadingIcon = ImageVector.vectorResource(id = R.drawable.ic_rounded_apps),
+                    interactionSource = appsInteractionSource,
+                    content = if (uiState.packages.isEmpty()) null else {
+                        {
+                            PackageIcons(modifier = Modifier.paddingTop(SizeTokens.Level8), packages = uiState.packages)
+                        }
                     }
+                ) {
+                    viewModel.emitIntentOnIO(IndexUiIntent.ToAppList(navController))
                 }
-            ) {
-                viewModel.emitIntentOnIO(IndexUiIntent.ToAppList(navController))
-            }
 
-            val filesInteractionSource = remember { MutableInteractionSource() }
-            Clickable(
-                title = stringResource(id = R.string.files),
-                value = if (uiState.medium.isEmpty()) null else
-                    "${context.getString(R.string.args_files_backed_up, uiState.medium.size)}${if (uiState.mediumSize.isNotEmpty()) " (${uiState.mediumSize})" else ""}"
-                ,
-                leadingIcon = ImageVector.vectorResource(id = R.drawable.ic_rounded_folder_open),
-                interactionSource = filesInteractionSource,
-            ) {
-                viewModel.emitIntentOnIO(IndexUiIntent.ToFileList(navController))
+                val filesInteractionSource = remember { MutableInteractionSource() }
+                Clickable(
+                    title = stringResource(id = R.string.files),
+                    value = if (uiState.medium.isEmpty()) null else
+                        "${context.getString(R.string.args_files_backed_up, uiState.medium.size)}${if (uiState.mediumSize.isNotEmpty()) " (${uiState.mediumSize})" else ""}"
+                    ,
+                    leadingIcon = ImageVector.vectorResource(id = R.drawable.ic_rounded_folder_open),
+                    interactionSource = filesInteractionSource,
+                ) {
+                    viewModel.emitIntentOnIO(IndexUiIntent.ToFileList(navController))
+                }
             }
 
             Title(title = stringResource(id = R.string.advanced)) {

@@ -3,10 +3,14 @@ package com.xayah.feature.main.history
 import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TopAppBarDefaults
@@ -22,6 +26,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.unit.Dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.xayah.core.model.OpType
@@ -30,8 +35,12 @@ import com.xayah.core.ui.component.Clickable
 import com.xayah.core.ui.component.InnerBottomSpacer
 import com.xayah.core.ui.component.InnerTopSpacer
 import com.xayah.core.ui.component.SecondaryLargeTopBar
+import com.xayah.core.ui.material3.Surface
 import com.xayah.core.ui.route.MainRoutes
+import com.xayah.core.ui.theme.ThemedColorSchemeKeyTokens
+import com.xayah.core.ui.theme.value
 import com.xayah.core.ui.token.AnimationTokens
+import com.xayah.core.ui.token.SizeTokens
 import com.xayah.core.ui.util.LocalNavController
 import com.xayah.core.util.DateUtil
 import com.xayah.core.util.maybePopBackStack
@@ -87,23 +96,40 @@ internal fun HistoryScreen(uiState: HistoryUiState) {
                                 )
                             }
                             val interactionSource = remember { MutableInteractionSource() }
-                            Clickable(
-                                title = stringResource(
-                                    when (it.taskType) {
-                                        TaskType.PACKAGE -> R.string.apps
-                                        TaskType.MEDIA -> R.string.files
-                                    }
+                            Surface(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = SizeTokens.Level16, vertical = SizeTokens.Level4),
+                                shape = RoundedCornerShape(SizeTokens.Level16),
+                                color = ThemedColorSchemeKeyTokens.SurfaceContainerLowest.value,
+                                tonalElevation = SizeTokens.Level1,
+                                shadowElevation = SizeTokens.Level1,
+                                border = BorderStroke(
+                                    Dp(1f),
+                                    ThemedColorSchemeKeyTokens.OutlineVariant.value.copy(alpha = 0.35f)
                                 ),
-                                value = desc,
-                                leadingIcon = ImageVector.vectorResource(
-                                    id = when (it.opType) {
-                                        OpType.BACKUP -> R.drawable.ic_rounded_acute
-                                        OpType.RESTORE -> R.drawable.ic_rounded_history
-                                    }
-                                ),
-                                interactionSource = interactionSource,
+                                onClick = {
+                                    navController.navigateSingle(MainRoutes.TaskDetails.getRoute(it.id))
+                                }
                             ) {
-                                navController.navigateSingle(MainRoutes.TaskDetails.getRoute(it.id))
+                                Clickable(
+                                    title = stringResource(
+                                        when (it.taskType) {
+                                            TaskType.PACKAGE -> R.string.apps
+                                            TaskType.MEDIA -> R.string.files
+                                        }
+                                    ),
+                                    value = desc,
+                                    leadingIcon = ImageVector.vectorResource(
+                                        id = when (it.opType) {
+                                            OpType.BACKUP -> R.drawable.ic_rounded_acute
+                                            OpType.RESTORE -> R.drawable.ic_rounded_history
+                                        }
+                                    ),
+                                    interactionSource = interactionSource,
+                                ) {
+                                    navController.navigateSingle(MainRoutes.TaskDetails.getRoute(it.id))
+                                }
                             }
                         }
 

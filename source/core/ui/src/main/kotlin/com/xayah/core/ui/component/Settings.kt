@@ -1,6 +1,7 @@
 package com.xayah.core.ui.component
 
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
@@ -29,9 +31,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.datastore.preferences.core.Preferences
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.xayah.core.datastore.readStoreBoolean
@@ -58,6 +62,7 @@ fun Clickable(
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(min = SizeTokens.Level80),
+            color = Color.Transparent,
             onClick = onClick,
             indication = indication,
             interactionSource = interactionSource
@@ -410,18 +415,34 @@ fun Title(
     verticalArrangement: Arrangement.Vertical = Arrangement.Top,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    Column {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .paddingHorizontal(SizeTokens.Level16)
+    ) {
         TitleSmallText(
             modifier = Modifier
-                .paddingHorizontal(SizeTokens.Level24)
-                .paddingVertical(SizeTokens.Level12),
+                .paddingHorizontal(SizeTokens.Level8)
+                .paddingVertical(SizeTokens.Level8),
             enabled = enabled,
             text = title,
             color = ThemedColorSchemeKeyTokens.Primary.value,
-            fontWeight = FontWeight.Medium
+            fontWeight = FontWeight.SemiBold
         )
-        Column(verticalArrangement = verticalArrangement) {
-            content()
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(SizeTokens.Level16),
+            color = ThemedColorSchemeKeyTokens.SurfaceContainerLowest.value,
+            tonalElevation = SizeTokens.Level1,
+            shadowElevation = SizeTokens.Level1,
+            border = BorderStroke(
+                Dp(1f),
+                ThemedColorSchemeKeyTokens.OutlineVariant.value.copy(alpha = 0.35f)
+            )
+        ) {
+            Column(verticalArrangement = verticalArrangement) {
+                content()
+            }
         }
     }
 }

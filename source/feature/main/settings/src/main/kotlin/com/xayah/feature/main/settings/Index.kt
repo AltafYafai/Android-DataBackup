@@ -60,7 +60,7 @@ fun PageSettings() {
                 .fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(SizeTokens.Level24)
         ) {
-            Column {
+            Title(title = stringResource(id = R.string.settings)) {
                 Clickable(
                     icon = ImageVector.vectorResource(id = R.drawable.ic_rounded_acute),
                     title = stringResource(id = R.string.backup_settings),
