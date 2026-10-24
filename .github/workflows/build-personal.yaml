@@ -46,3 +46,31 @@ jobs:
         with:
           name: PersonalAPK
           path: '**/*.apk'
+
+      - name: Send APK to Telegram
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+        run: |
+          if [ -z "$TG_BOT_TOKEN" ] || [ -z "$TG_CHAT_ID" ]; then
+            echo "::warning::TG_BOT_TOKEN or TG_CHAT_ID not set - skipping Telegram upload"
+            exit 0
+          fi
+          APK_FILE=$(ls -1 -- *.apk | head -n 1)
+          CAPTION=$(printf 'MyBackup %s\ncommit: %s\nrun: %s/%s/actions/runs/%s\nbuilt %s' \
+            "$APK_FILE" \
+            "${GITHUB_SHA::7}" \
+            "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" \
+            "$(date -u '+%Y-%m-%d %H:%M UTC')")
+          RESPONSE=$(curl -sS --max-time 620 \
+            -F chat_id="${TG_CHAT_ID}" \
+            -F caption="${CAPTION}" \
+            -F "document=@${APK_FILE}" \
+            "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendDocument" 2>curl_err.txt) || true
+          if echo "$RESPONSE" | grep -q '"ok":true'; then
+            echo "Telegram upload OK: $APK_FILE"
+          else
+            echo "::warning::Telegram upload failed"
+            echo "$RESPONSE"
+            cat curl_err.txt
+          fi
