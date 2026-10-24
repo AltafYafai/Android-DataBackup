@@ -89,7 +89,7 @@ fun PageRestore() {
             )
 
             var enabled by remember { mutableStateOf(true) }
-            val storageOptions = remember { listOf(context.getString(R.string.local), context.getString(R.string.cloud)) }
+            val storageOptions = remember { listOf(context.getString(R.string.local)) }
             SingleChoiceSegmentedButtonRow(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -112,43 +112,6 @@ fun PageRestore() {
                         selected = index == uiState.storageIndex
                     ) {
                         Text(label)
-                    }
-                }
-            }
-
-            AnimatedVisibility(uiState.storageIndex == 1) {
-                if (accounts.isEmpty()) {
-                    Clickable(
-                        title = stringResource(id = R.string.account),
-                        value = stringResource(id = R.string.no_available_account),
-                        leadingIcon = ImageVector.vectorResource(id = R.drawable.ic_rounded_cancel_circle),
-                        trailingIcon = Icons.Rounded.KeyboardArrowRight,
-                    ) {
-                        navController.navigateSingle(MainRoutes.Cloud.route)
-                    }
-                } else {
-                    val dialogState = LocalSlotScope.current!!.dialogSlot
-                    var currentIndex by remember { mutableIntStateOf(if (uiState.cloudEntity == null) 0 else accounts.indexOfFirst { it.title == uiState.cloudEntity!!.name }) }
-                    LaunchedEffect(currentIndex) {
-                        viewModel.emitIntentOnIO(IndexUiIntent.SetCloudEntity(name = accounts[currentIndex].title))
-                    }
-                    Selectable(
-                        title = stringResource(id = R.string.account),
-                        leadingIcon = uiState.cloudEntity?.type?.icon ?: ImageVector.vectorResource(id = R.drawable.ic_rounded_person),
-                        value = if (uiState.cloudEntity == null) stringResource(id = R.string.choose_an_account) else accounts[currentIndex].desc
-                            ?: stringResource(id = R.string.unknown),
-                        current = if (uiState.cloudEntity == null) stringResource(id = R.string.not_selected) else accounts[currentIndex].title
-                    ) {
-                        viewModel.launchOnIO {
-                            val (state, selectedIndex) = dialogState.select(
-                                title = context.getString(R.string.account),
-                                defIndex = currentIndex,
-                                items = accounts
-                            )
-                            if (state.isConfirm) {
-                                currentIndex = selectedIndex
-                            }
-                        }
                     }
                 }
             }

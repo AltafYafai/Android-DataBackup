@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Cloud
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.ListAlt
@@ -184,18 +183,6 @@ fun PageDashboard() {
 //                        colorL80D20 = ThemedColorSchemeKeyTokens.GreenL80D20,
 //                        onColorContainer = ThemedColorSchemeKeyTokens.GreenOnPrimaryContainer
 //                    )
-                    QuickActionsButton(
-                        modifier = Modifier.weight(1f),
-                        enabled = nullBackupDir.not(),
-                        title = stringResource(id = R.string.cloud),
-                        icon = Icons.Outlined.Cloud,
-                        colorContainer = ThemedColorSchemeKeyTokens.PurplePrimaryContainer,
-                        colorL80D20 = ThemedColorSchemeKeyTokens.PurpleL80D20,
-                        onColorContainer = ThemedColorSchemeKeyTokens.PurpleOnPrimaryContainer,
-                        actionIcon = Icons.Rounded.KeyboardArrowRight
-                    ) {
-                        navController.navigateSingle(MainRoutes.Cloud.route)
-                    }
                     QuickActionsButton(
                         modifier = Modifier.weight(1f),
                         enabled = nullBackupDir.not(),
