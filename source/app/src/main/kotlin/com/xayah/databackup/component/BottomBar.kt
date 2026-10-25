@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -94,7 +95,7 @@ fun BackupVaultBottomBar(
                     .fillMaxWidth()
                     .padding(horizontal = SizeTokens.Level16, vertical = SizeTokens.Level8)
                     .navigationBarsPadding(),
-                shape = RoundedCornerShape(SizeTokens.Level28),
+                shape = RoundedCornerShape(28.dp),
                 color = ThemedColorSchemeKeyTokens.SurfaceContainerLowest.value.copy(alpha = 0.90f),
                 tonalElevation = SizeTokens.Level6,
                 shadowElevation = SizeTokens.Level8,
