@@ -19,6 +19,10 @@
     <item name="load_system_apps" type="string" />
     <item name="settings" type="string" />
     <item name="backup_settings" type="string" />
+    <item name="reset_backup_list" type="string" />
+    <item name="reset_backup_list_desc" type="string" />
+    <item name="reset_restore_list" type="string" />
+    <item name="reset_restore_list_desc" type="string" />
     <item name="restore_settings" type="string" />
     <item name="setup" type="string" />
     <item name="enter_the_setup_page_again" type="string" />

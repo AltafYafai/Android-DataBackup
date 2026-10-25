@@ -27,6 +27,7 @@ import com.xayah.core.datastore.KeyBackupItself
 import com.xayah.core.datastore.KeyCheckKeystore
 import com.xayah.core.datastore.KeyCompressionTest
 import com.xayah.core.datastore.KeyFollowSymlinks
+import com.xayah.core.datastore.KeyResetBackupList
 import com.xayah.core.datastore.readCompressionLevel
 import com.xayah.core.datastore.readKillAppOption
 import com.xayah.core.datastore.saveCompressionLevel
@@ -137,6 +138,12 @@ fun PageBackupSettings() {
                  *     checkedText = stringResource(id = R.string.compatible_mode_desc),
                  * )
                  */
+                Switchable(
+                    key = KeyResetBackupList,
+                    defValue = true,
+                    title = stringResource(id = R.string.reset_backup_list),
+                    checkedText = stringResource(id = R.string.reset_backup_list_desc),
+                )
                 Switchable(
                     key = KeyFollowSymlinks,
                     defValue = false,

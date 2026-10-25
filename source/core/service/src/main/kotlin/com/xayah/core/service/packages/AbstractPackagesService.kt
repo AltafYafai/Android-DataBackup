@@ -15,6 +15,11 @@ import com.xayah.core.util.command.BaseUtil
 internal abstract class AbstractPackagesService : AbstractProcessingService() {
     protected val mPkgEntities: MutableList<TaskDetailPackageEntity> = mutableListOf()
 
+    override fun onReset() {
+        super.onReset()
+        mPkgEntities.clear()
+    }
+
     protected suspend fun TaskDetailPackageEntity.update(
         state: OperationState? = null,
         processingIndex: Int? = null,

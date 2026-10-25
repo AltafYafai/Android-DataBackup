@@ -131,6 +131,7 @@ internal abstract class AbstractBackupService : AbstractMediumService() {
                     if (media.isSuccess) {
                         // Save config
                         m.extraInfo.lastBackupTime = DateUtil.getTimestamp()
+                        m.extraInfo.activated = false
                         val id = restoreEntity?.id ?: 0
                         restoreEntity = m.copy(
                             id = id,

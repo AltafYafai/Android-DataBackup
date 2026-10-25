@@ -64,6 +64,7 @@ abstract class AbstractProcessingServiceProxy {
      */
     fun destroyService(clearNotification: Boolean = false) {
         if (clearNotification) NotificationUtil.cancel(context)
+        mService?.resetService()
         if (mConnection != null)
             context.unbindService(mConnection!!)
         mService?.stopSelf()

@@ -11,6 +11,11 @@ import com.xayah.core.service.AbstractProcessingService
 internal abstract class AbstractMediumService : AbstractProcessingService() {
     protected val mMediaEntities: MutableList<TaskDetailMediaEntity> = mutableListOf()
 
+    override fun onReset() {
+        super.onReset()
+        mMediaEntities.clear()
+    }
+
     protected suspend fun TaskDetailMediaEntity.update(
         state: OperationState? = null,
         processingIndex: Int? = null,

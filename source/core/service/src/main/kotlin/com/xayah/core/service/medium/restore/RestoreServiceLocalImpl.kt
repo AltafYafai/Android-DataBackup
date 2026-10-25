@@ -37,17 +37,15 @@ internal class RestoreServiceLocalImpl @Inject constructor() : AbstractRestoreSe
     @Inject
     override lateinit var mTaskRepo: TaskRepository
 
-    override val mTaskEntity by lazy {
-        TaskEntity(
-            id = 0,
-            opType = OpType.RESTORE,
-            taskType = TaskType.MEDIA,
-            startTimestamp = mStartTimestamp,
-            endTimestamp = mEndTimestamp,
-            backupDir = mRootDir,
-            isProcessing = true,
-        )
-    }
+    override fun onCreateTaskEntity(): TaskEntity = TaskEntity(
+        id = 0,
+        opType = OpType.RESTORE,
+        taskType = TaskType.MEDIA,
+        startTimestamp = mStartTimestamp,
+        endTimestamp = mEndTimestamp,
+        backupDir = mRootDir,
+        isProcessing = true,
+    )
 
     override suspend fun getMedium(): List<MediaEntity> {
         return mMediaRepo.queryActivated(OpType.RESTORE, "", mRootDir)

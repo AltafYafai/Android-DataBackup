@@ -95,6 +95,8 @@ abstract class AbstractProcessingViewModel(
             }
 
             is ProcessingUiIntent.DestroyService -> {
+                _taskId.value = -1L
+                emitState(state.copy(state = OperationState.IDLE))
                 if (state.storageType == StorageMode.Cloud) {
                     // Cloud
                     mCloudService.destroyService(true)

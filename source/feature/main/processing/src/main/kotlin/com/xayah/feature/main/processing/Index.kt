@@ -212,6 +212,7 @@ fun PageProcessing(
                         modifier = Modifier.fillMaxWidth(),
                         onClick = {
                             task?.apply {
+                                viewModel.emitIntentOnIO(ProcessingUiIntent.DestroyService)
                                 navController.popBackStack()
                                 navController.navigateSingle(MainRoutes.TaskDetails.getRoute(id))
                             }
@@ -223,8 +224,12 @@ fun PageProcessing(
                 }
 
                 Button(modifier = Modifier.fillMaxWidth(), enabled = uiState.state == OperationState.IDLE || uiState.state == OperationState.DONE, onClick = {
-                    if (uiState.state == OperationState.IDLE) viewModel.emitIntentOnIO(ProcessingUiIntent.Process)
-                    else navController.popBackStack()
+                    if (uiState.state == OperationState.IDLE) {
+                        viewModel.emitIntentOnIO(ProcessingUiIntent.Process)
+                    } else {
+                        viewModel.emitIntentOnIO(ProcessingUiIntent.DestroyService)
+                        navController.popBackStack()
+                    }
                 }) {
                     AnimatedTextContainer(targetState = if (uiState.state == OperationState.DONE) stringResource(id = R.string.finish) else stringResource(id = R.string._continue)) { text ->
                         Text(text = text)

@@ -120,7 +120,8 @@ internal abstract class AbstractProcessingService : Service() {
     protected abstract val mCommonBackupUtil: CommonBackupUtil
     protected abstract val mTaskDao: TaskDao
     protected abstract val mTaskRepo: TaskRepository
-    protected abstract val mTaskEntity: TaskEntity
+    protected abstract fun onCreateTaskEntity(): TaskEntity
+    protected lateinit var mTaskEntity: TaskEntity
 
     protected val mNotificationBuilder by lazy { NotificationUtil.getProgressNotificationBuilder(mContext) }
     private val mPreprocessingEntities: MutableList<ProcessingInfoEntity> = mutableListOf()
@@ -129,10 +130,28 @@ internal abstract class AbstractProcessingService : Service() {
     protected var mStartTimestamp: Long = 0
     protected var mEndTimestamp: Long = 0
 
+    open fun resetService() {
+        mIsInitialized = false
+        mPreprocessingEntities.clear()
+        mPostProcessingEntities.clear()
+        mStartTimestamp = 0
+        mEndTimestamp = 0
+        onReset()
+    }
+
+    protected open fun onReset() {}
+
+    override fun onDestroy() {
+        super.onDestroy()
+        resetService()
+    }
+
     @SuppressLint("StringFormatInvalid")
     suspend fun initialize(): Long {
         mMutex.withLock {
-            if (mIsInitialized.not()) {
+            if (mIsInitialized.not() || (::mTaskEntity.isInitialized && mTaskEntity.isProcessing.not())) {
+                resetService()
+                mTaskEntity = onCreateTaskEntity()
                 mTaskDao.upsert(mTaskEntity).apply {
                     // Initialize task id.
                     mTaskEntity.id = this

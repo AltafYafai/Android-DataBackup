@@ -44,17 +44,15 @@ internal class BackupServiceCloudImpl @Inject constructor() : AbstractBackupServ
     @Inject
     override lateinit var mTaskRepo: TaskRepository
 
-    override val mTaskEntity by lazy {
-        TaskEntity(
-            id = 0,
-            opType = OpType.BACKUP,
-            taskType = TaskType.MEDIA,
-            startTimestamp = mStartTimestamp,
-            endTimestamp = mEndTimestamp,
-            backupDir = mRootDir,
-            isProcessing = true,
-        )
-    }
+    override fun onCreateTaskEntity(): TaskEntity = TaskEntity(
+        id = 0,
+        opType = OpType.BACKUP,
+        taskType = TaskType.MEDIA,
+        startTimestamp = mStartTimestamp,
+        endTimestamp = mEndTimestamp,
+        backupDir = mRootDir,
+        isProcessing = true,
+    )
 
     override suspend fun onTargetDirsCreated() {
         mCloudRepo.getClient().also { (c, e) ->
