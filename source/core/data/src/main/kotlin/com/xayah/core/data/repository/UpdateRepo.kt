@@ -2,6 +2,10 @@ package com.xayah.core.data.repository
 
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
+import android.provider.Settings
 import androidx.core.content.FileProvider
 import com.topjohnwu.superuser.Shell
 import com.xayah.core.common.util.BuildConfigUtil
@@ -163,12 +167,42 @@ class UpdateRepo @Inject constructor(
 
     fun installApk(apkFile: File) {
         try {
-            // First attempt root installation if available
-            runCatching {
-                Shell.cmd("pm install -r ${apkFile.absolutePath}").submit()
+            if (!apkFile.exists() || apkFile.length() == 0L) {
+                LogUtil.log("Install update error: file does not exist or is empty: ${apkFile.absolutePath}")
+                return
             }
 
-            // Launch standard PackageInstaller via FileProvider
+            // 1. Try Root Installation first if root is available
+            val isRootAvailable = runCatching { Shell.getShell().isRoot }.getOrDefault(false)
+            if (isRootAvailable) {
+                val tmpPath = "/data/local/tmp/update.apk"
+                val result = Shell.cmd(
+                    "cp -f '${apkFile.absolutePath}' $tmpPath",
+                    "chmod 644 $tmpPath",
+                    "pm install -r -d $tmpPath",
+                    "rm -f $tmpPath"
+                ).exec()
+
+                if (result.isSuccess) {
+                    LogUtil.log("Root update install succeeded: ${result.out.joinToString()}")
+                    return
+                } else {
+                    LogUtil.log("Root update install failed: ${result.err.joinToString()}, falling back to PackageInstaller")
+                }
+            }
+
+            // 2. Check REQUEST_INSTALL_PACKAGES permission on Android 8.0+ (API 26+)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                if (!context.packageManager.canRequestPackageInstalls()) {
+                    val settingsIntent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
+                        data = Uri.parse("package:${context.packageName}")
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                    context.startActivity(settingsIntent)
+                }
+            }
+
+            // 3. Launch PackageInstaller via FileProvider
             val authority = "com.xayah.core.provider.FileSharingProvider.${BuildConfigUtil.FLAVOR_feature.lowercase()}"
             val uri = FileProvider.getUriForFile(
                 context,
@@ -177,8 +211,19 @@ class UpdateRepo @Inject constructor(
             )
             val intent = Intent(Intent.ACTION_VIEW).apply {
                 setDataAndType(uri, "application/vnd.android.package-archive")
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
             }
+
+            // Grant read permission to all matching activities
+            @Suppress("DEPRECATION")
+            val resolveInfos = context.packageManager.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
+            for (resolveInfo in resolveInfos) {
+                context.grantUriPermission(resolveInfo.activityInfo.packageName, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+
             context.startActivity(intent)
         } catch (e: Exception) {
             LogUtil.log("Install update error: ${e.message}")

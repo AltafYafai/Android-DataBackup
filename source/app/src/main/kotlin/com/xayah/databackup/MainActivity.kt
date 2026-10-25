@@ -142,6 +142,24 @@ class MainActivity : AppCompatActivity() {
                             onLaterClick = {}
                         )
                     }
+                    is UpdateState.ReadyToInstall -> {
+                        AppUpdateDialog(
+                            isOpen = true,
+                            versionName = state.updateInfo.versionName,
+                            changelog = state.updateInfo.changelog,
+                            sizeBytes = state.updateInfo.sizeBytes,
+                            sizeText = state.updateInfo.sizeText,
+                            isDownloading = false,
+                            isReadyToInstall = true,
+                            onDownloadClick = {},
+                            onInstallClick = {
+                                updateRepo.installApk(state.apkFile)
+                            },
+                            onLaterClick = {
+                                updateRepo.dismissUpdate()
+                            }
+                        )
+                    }
                     else -> {}
                 }
 

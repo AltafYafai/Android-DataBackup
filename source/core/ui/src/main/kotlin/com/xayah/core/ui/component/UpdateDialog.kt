@@ -64,13 +64,15 @@ fun AppUpdateDialog(
     downloadProgress: Float = 0f,
     downloadedBytes: Long = 0L,
     totalBytes: Long = 0L,
+    isReadyToInstall: Boolean = false,
     onDownloadClick: () -> Unit,
+    onInstallClick: () -> Unit = {},
     onLaterClick: () -> Unit,
 ) {
     if (!isOpen) return
 
     val animatedDownloadProgress = animateFloatAsState(
-        targetValue = downloadProgress.coerceIn(0f, 1f),
+        targetValue = if (isReadyToInstall) 1f else downloadProgress.coerceIn(0f, 1f),
         animationSpec = tween(200, easing = FastOutSlowInEasing),
         label = "update_download_progress"
     )
@@ -119,10 +121,10 @@ fun AppUpdateDialog(
                         Surface(
                             modifier = Modifier.size(52.dp),
                             shape = RoundedCornerShape(16.dp),
-                            color = ThemedColorSchemeKeyTokens.PrimaryContainer.value.copy(alpha = 0.6f)
+                            color = if (isReadyToInstall) Color(0xFFE8F5E9) else ThemedColorSchemeKeyTokens.PrimaryContainer.value.copy(alpha = 0.6f)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
-                                Text(text = "🚀", fontSize = 26.sp)
+                                Text(text = if (isReadyToInstall) "📦" else "🚀", fontSize = 26.sp)
                             }
                         }
 
@@ -145,7 +147,7 @@ fun AppUpdateDialog(
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Text(
-                            text = "New Update Available!",
+                            text = if (isReadyToInstall) "Update Ready to Install!" else "New Update Available!",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                             color = ThemedColorSchemeKeyTokens.OnSurface.value,
@@ -275,6 +277,93 @@ fun AppUpdateDialog(
                                                 )
                                             )
                                         )
+                                )
+                            }
+                        }
+                    } else if (isReadyToInstall) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Download complete! Ready to install.",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color(0xFF2E7D32),
+                                    fontSize = 12.sp
+                                )
+                                Text(
+                                    text = "100%",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF2E7D32),
+                                    fontSize = 12.sp
+                                )
+                            }
+
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(8.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFF4CAF50).copy(alpha = 0.25f))
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .fillMaxHeight()
+                                        .clip(CircleShape)
+                                        .background(
+                                            Brush.horizontalGradient(
+                                                listOf(
+                                                    Color(0xFF2E7D32),
+                                                    Color(0xFF4CAF50)
+                                                )
+                                            )
+                                        )
+                                )
+                            }
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(SizeTokens.Level12, Alignment.End),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            OutlinedButton(
+                                onClick = onLaterClick,
+                                shape = CircleShape,
+                                border = BorderStroke(1.dp, ThemedColorSchemeKeyTokens.OutlineVariant.value.copy(alpha = 0.5f))
+                            ) {
+                                Text(
+                                    text = "Later",
+                                    color = ThemedColorSchemeKeyTokens.OnSurfaceVariant.value,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+
+                            Button(
+                                onClick = onInstallClick,
+                                shape = CircleShape,
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF2E7D32),
+                                    contentColor = Color.White
+                                )
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Check,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "Install Now",
+                                    fontWeight = FontWeight.Bold
                                 )
                             }
                         }
