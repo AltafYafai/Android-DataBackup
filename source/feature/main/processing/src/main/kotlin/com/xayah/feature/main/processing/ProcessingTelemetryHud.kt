@@ -119,7 +119,7 @@ fun ProcessingTelemetryHud(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(SizeTokens.Level16),
-            verticalArrangement = Arrangement.spacedBy(SizeTokens.Level14)
+            verticalArrangement = Arrangement.spacedBy(SizeTokens.Level12)
         ) {
             // 1. Header Row: Icon + Title/Subtitle + Status Chip
             Row(

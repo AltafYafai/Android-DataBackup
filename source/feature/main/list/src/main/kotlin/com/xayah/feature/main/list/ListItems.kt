@@ -171,7 +171,7 @@ fun AppItem(
                 .height(IntrinsicSize.Min)
                 .padding(horizontal = SizeTokens.Level16, vertical = SizeTokens.Level12),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(SizeTokens.Level14)
+            horizontalArrangement = Arrangement.spacedBy(SizeTokens.Level16)
         ) {
             PackageIconImage(packageName = packageName, size = SizeTokens.Level40)
 
