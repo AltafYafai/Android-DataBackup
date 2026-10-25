@@ -130,6 +130,8 @@ class SystemDataRepo @Inject constructor(
             BaseUtil.execute("pm grant $pkg android.permission.WRITE_CONTACTS")
             BaseUtil.execute("appops set $pkg WRITE_SMS allow")
             BaseUtil.execute("appops set $pkg READ_SMS allow")
+            BaseUtil.execute("appops set $pkg 14 allow")
+            BaseUtil.execute("appops set $pkg 15 allow")
         }
     }
 
@@ -438,130 +440,133 @@ class SystemDataRepo @Inject constructor(
 
             val pkg = context.packageName
 
-            // 1. Query original default SMS app so we can restore it when done
-            onProgress("Acquiring SMS system role...")
+            // Identify current default SMS app so we can restart its caching process when restore completes
             val getHolder = BaseUtil.execute("cmd role get-role-holders android.app.role.SMS", log = false)
-            var prevSmsApp = getHolder.out.firstOrNull()?.trim() ?: ""
-            if (prevSmsApp.isEmpty()) {
+            var defaultSmsApp = getHolder.out.firstOrNull()?.trim() ?: ""
+            if (defaultSmsApp.isEmpty() || defaultSmsApp == "null") {
                 val secRes = BaseUtil.execute("settings get secure sms_default_application", log = false)
-                prevSmsApp = secRes.out.firstOrNull()?.trim() ?: ""
+                defaultSmsApp = secRes.out.firstOrNull()?.trim() ?: ""
             }
-            if (prevSmsApp == "null" || prevSmsApp == pkg) prevSmsApp = ""
+            if (defaultSmsApp == "null" || defaultSmsApp == pkg) defaultSmsApp = ""
 
-            // 2. Temporarily set BackupVault as default SMS role holder
-            BaseUtil.execute("cmd role set-bypassing-role-qualification true", log = false)
-            BaseUtil.execute("cmd role add-role-holder --user 0 android.app.role.SMS $pkg", log = false)
-            BaseUtil.execute("settings put secure sms_default_application $pkg", log = false)
+            // Grant AppOps to allow TelephonyProvider write access without changing default SMS role
+            // (Changing roles kills running app process via Android ActivityManager)
             BaseUtil.execute("appops set $pkg WRITE_SMS allow", log = false)
             BaseUtil.execute("appops set $pkg READ_SMS allow", log = false)
+            BaseUtil.execute("appops set $pkg 14 allow", log = false)
             BaseUtil.execute("appops set $pkg 15 allow", log = false)
+            BaseUtil.execute("pm grant $pkg android.permission.READ_SMS", log = false)
+            BaseUtil.execute("pm grant $pkg android.permission.RECEIVE_SMS", log = false)
+            BaseUtil.execute("pm grant $pkg android.permission.SEND_SMS", log = false)
 
-            try {
-                onProgress("Checking existing messages to avoid duplicates...")
-                val existingSet = HashSet<String>()
-                runCatching {
-                    context.contentResolver.query(
-                        Uri.parse("content://sms"),
-                        arrayOf("address", "date", "body"),
-                        null,
-                        null,
-                        null
-                    )?.use { c ->
-                        val addrIdx = c.getColumnIndex("address")
-                        val dateIdx = c.getColumnIndex("date")
-                        val bodyIdx = c.getColumnIndex("body")
-                        while (c.moveToNext()) {
-                            val addr = if (addrIdx >= 0) c.getString(addrIdx) ?: "" else ""
-                            val date = if (dateIdx >= 0) c.getLong(dateIdx) else 0L
-                            val body = if (bodyIdx >= 0) c.getString(bodyIdx) ?: "" else ""
-                            existingSet.add("$addr:$date:${body.take(20)}")
-                        }
+            onProgress("Checking existing messages to avoid duplicates...")
+            val existingSet = HashSet<String>()
+            runCatching {
+                context.contentResolver.query(
+                    Uri.parse("content://sms"),
+                    arrayOf("address", "date", "body"),
+                    null,
+                    null,
+                    null
+                )?.use { c ->
+                    val addrIdx = c.getColumnIndex("address")
+                    val dateIdx = c.getColumnIndex("date")
+                    val bodyIdx = c.getColumnIndex("body")
+                    while (c.moveToNext()) {
+                        val addr = if (addrIdx >= 0) c.getString(addrIdx) ?: "" else ""
+                        val date = if (dateIdx >= 0) c.getLong(dateIdx) else 0L
+                        val body = if (bodyIdx >= 0) c.getString(bodyIdx) ?: "" else ""
+                        existingSet.add("$addr:$date:${body.take(20)}")
                     }
                 }
+            }
 
-                val toInsert = list.filter { !existingSet.contains("${it.address}:${it.date}:${it.body.take(20)}") }
-                if (toInsert.isEmpty() && list.isNotEmpty()) {
-                    log { "All ${list.size} SMS messages already exist in system telephony store." }
-                    return@runCatching list.size
+            val toInsert = list.filter { !existingSet.contains("${it.address}:${it.date}:${it.body.take(20)}") }
+            if (toInsert.isEmpty() && list.isNotEmpty()) {
+                log { "All ${list.size} SMS messages already exist in system telephony store." }
+                return@runCatching list.size
+            }
+
+            onProgress("Restoring ${toInsert.size} new SMS messages...")
+
+            var count = 0
+            var canUseContentResolver = false
+
+            // Test whether native ContentResolver insert succeeds
+            val first = toInsert.first()
+            val firstValues = ContentValues().apply {
+                put("address", first.address)
+                put("date", first.date)
+                if (first.dateSent > 0) put("date_sent", first.dateSent)
+                put("read", first.read)
+                put("type", first.type)
+                put("body", first.body)
+                put("seen", 1)
+                if (first.serviceCenter != null) put("service_center", first.serviceCenter)
+                if (first.subId >= 0) put("sub_id", first.subId)
+            }
+            val testUri = runCatching { context.contentResolver.insert(Uri.parse("content://sms"), firstValues) }.getOrNull()
+            if (testUri != null) {
+                canUseContentResolver = true
+                count++
+            }
+
+            if (canUseContentResolver) {
+                // Insert remaining messages natively
+                val remaining = toInsert.drop(1)
+                for ((index, item) in remaining.withIndex()) {
+                    if (index % 50 == 0) {
+                        onProgress("Restoring SMS (${index + 1}/${toInsert.size})...")
+                    }
+                    val values = ContentValues().apply {
+                        put("address", item.address)
+                        put("date", item.date)
+                        if (item.dateSent > 0) put("date_sent", item.dateSent)
+                        put("read", item.read)
+                        put("type", item.type)
+                        put("body", item.body)
+                        put("seen", 1)
+                        if (item.serviceCenter != null) put("service_center", item.serviceCenter)
+                        if (item.subId >= 0) put("sub_id", item.subId)
+                    }
+                    val uri = runCatching { context.contentResolver.insert(Uri.parse("content://sms"), values) }.getOrNull()
+                    if (uri != null) count++
                 }
-
-                onProgress("Restoring ${toInsert.size} new SMS messages...")
-
-                var count = 0
+            } else {
+                // Fallback: Batch insertion via root shell script (runs as UID 0 root)
                 val chunks = toInsert.chunked(50)
                 for ((chunkIndex, chunk) in chunks.withIndex()) {
                     onProgress("Restoring SMS (${chunkIndex * 50}/${toInsert.size})...")
-
-                    // First attempt: batch insert via ContentProviderOperation into content://sms
-                    val ops = ArrayList<ContentProviderOperation>()
-                    for (item in chunk) {
-                        ops.add(
-                            ContentProviderOperation.newInsert(Uri.parse("content://sms"))
-                                .withValue("address", item.address)
-                                .withValue("date", item.date)
-                                .apply { if (item.dateSent > 0) withValue("date_sent", item.dateSent) }
-                                .withValue("read", item.read)
-                                .withValue("type", item.type)
-                                .withValue("body", item.body)
-                                .withValue("seen", 1)
-                                .build()
-                        )
-                    }
-
-                    val batchSuccess = runCatching {
-                        context.contentResolver.applyBatch("sms", ops)
-                        count += chunk.size
-                        true
-                    }.getOrDefault(false)
-
-                    if (!batchSuccess) {
-                        // Fallback: individual insert via ContentResolver, with root shell fallback
+                    val scriptFile = File(context.cacheDir, "restore_sms_$chunkIndex.sh")
+                    try {
+                        val sb = java.lang.StringBuilder("#!/system/bin/sh\n")
                         for (item in chunk) {
-                            val values = ContentValues().apply {
-                                put("address", item.address)
-                                put("date", item.date)
-                                if (item.dateSent > 0) put("date_sent", item.dateSent)
-                                put("read", item.read)
-                                put("type", item.type)
-                                put("body", item.body)
-                                put("seen", 1)
-                                if (item.serviceCenter != null) put("service_center", item.serviceCenter)
-                                if (item.subId >= 0) put("sub_id", item.subId)
-                            }
-
-                            val targetUri = if (item.type == 2) Uri.parse("content://sms/sent") else Uri.parse("content://sms/inbox")
-                            val uri = runCatching { context.contentResolver.insert(targetUri, values) }
-                                .recoverCatching { context.contentResolver.insert(Uri.parse("content://sms"), values) }
-                                .getOrNull()
-
-                            if (uri != null) {
-                                count++
-                            } else {
-                                // Root shell fallback running as system UID (1000)
-                                val safeAddr = item.address.replace("'", "")
-                                val safeBody = item.body.replace("'", "").replace("\"", "").replace("\n", " ").replace("\r", " ")
-                                val cmd = "su 1000 -c \"content insert --uri content://sms --bind address:s:'$safeAddr' --bind body:s:'$safeBody' --bind date:l:${item.date} --bind type:i:${item.type} --bind read:i:${item.read} --bind seen:i:1\" || content insert --uri content://sms --bind address:s:'$safeAddr' --bind body:s:'$safeBody' --bind date:l:${item.date} --bind type:i:${item.type} --bind read:i:${item.read} --bind seen:i:1"
-                                val res = BaseUtil.execute(cmd, log = false)
-                                if (res.isSuccess) count++
-                            }
+                            val safeAddr = item.address.replace("'", "'\\''")
+                            val safeBody = item.body.replace("'", "'\\''")
+                            sb.append("content insert --uri content://sms --bind address:s:'$safeAddr' --bind body:s:'$safeBody' --bind date:l:${item.date} --bind type:i:${item.type} --bind read:i:${item.read} --bind seen:i:1\n")
                         }
+                        scriptFile.writeText(sb.toString())
+                        val res = BaseUtil.execute("sh '${scriptFile.absolutePath}'", log = false)
+                        if (res.isSuccess) {
+                            count += chunk.size
+                        }
+                    } finally {
+                        scriptFile.delete()
                     }
-                }
-
-                log { "Restored $count SMS messages." }
-                count
-            } finally {
-                // 3. Restore original default SMS app
-                BaseUtil.execute("cmd role set-bypassing-role-qualification false", log = false)
-                if (prevSmsApp.isNotEmpty() && prevSmsApp != pkg) {
-                    onProgress("Restoring original default SMS app ($prevSmsApp)...")
-                    BaseUtil.execute("cmd role add-role-holder --user 0 android.app.role.SMS $prevSmsApp", log = false)
-                    BaseUtil.execute("cmd role remove-role-holder --user 0 android.app.role.SMS $pkg", log = false)
-                    BaseUtil.execute("settings put secure sms_default_application $prevSmsApp", log = false)
-                    // Force-stop previous messaging app so it re-indexes telephony database on relaunch
-                    BaseUtil.execute("am force-stop '$prevSmsApp'", log = false)
                 }
             }
+
+            // Force-stop messaging apps so they reload TelephonyProvider database cache
+            onProgress("Refreshing messaging service...")
+            if (defaultSmsApp.isNotEmpty()) {
+                BaseUtil.execute("am force-stop '$defaultSmsApp'", log = false)
+            }
+            BaseUtil.execute("am force-stop com.google.android.apps.messaging", log = false)
+            BaseUtil.execute("am force-stop com.android.mms", log = false)
+            BaseUtil.execute("am force-stop com.xiaomi.sms", log = false)
+
+            log { "Restored $count SMS messages." }
+            count
         }
     }
 
