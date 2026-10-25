@@ -449,10 +449,12 @@ class SystemDataRepo @Inject constructor(
             if (prevSmsApp == "null" || prevSmsApp == pkg) prevSmsApp = ""
 
             // 2. Temporarily set BackupVault as default SMS role holder
-            BaseUtil.execute("cmd role add-role-holder --user 0 android.app.role.SMS $pkg")
-            BaseUtil.execute("settings put secure sms_default_application $pkg")
-            BaseUtil.execute("appops set $pkg WRITE_SMS allow")
-            BaseUtil.execute("appops set $pkg READ_SMS allow")
+            BaseUtil.execute("cmd role set-bypassing-role-qualification true", log = false)
+            BaseUtil.execute("cmd role add-role-holder --user 0 android.app.role.SMS $pkg", log = false)
+            BaseUtil.execute("settings put secure sms_default_application $pkg", log = false)
+            BaseUtil.execute("appops set $pkg WRITE_SMS allow", log = false)
+            BaseUtil.execute("appops set $pkg READ_SMS allow", log = false)
+            BaseUtil.execute("appops set $pkg 15 allow", log = false)
 
             try {
                 onProgress("Checking existing messages to avoid duplicates...")
@@ -478,6 +480,11 @@ class SystemDataRepo @Inject constructor(
                 }
 
                 val toInsert = list.filter { !existingSet.contains("${it.address}:${it.date}:${it.body.take(20)}") }
+                if (toInsert.isEmpty() && list.isNotEmpty()) {
+                    log { "All ${list.size} SMS messages already exist in system telephony store." }
+                    return@runCatching list.size
+                }
+
                 onProgress("Restoring ${toInsert.size} new SMS messages...")
 
                 var count = 0
@@ -485,12 +492,11 @@ class SystemDataRepo @Inject constructor(
                 for ((chunkIndex, chunk) in chunks.withIndex()) {
                     onProgress("Restoring SMS (${chunkIndex * 50}/${toInsert.size})...")
 
-                    // First attempt: batch insert via ContentProviderOperation
+                    // First attempt: batch insert via ContentProviderOperation into content://sms
                     val ops = ArrayList<ContentProviderOperation>()
                     for (item in chunk) {
-                        val targetUri = if (item.type == 2) Uri.parse("content://sms/sent") else Uri.parse("content://sms/inbox")
                         ops.add(
-                            ContentProviderOperation.newInsert(targetUri)
+                            ContentProviderOperation.newInsert(Uri.parse("content://sms"))
                                 .withValue("address", item.address)
                                 .withValue("date", item.date)
                                 .apply { if (item.dateSent > 0) withValue("date_sent", item.dateSent) }
@@ -531,10 +537,10 @@ class SystemDataRepo @Inject constructor(
                             if (uri != null) {
                                 count++
                             } else {
-                                // Root shell fallback
+                                // Root shell fallback running as system UID (1000)
                                 val safeAddr = item.address.replace("'", "")
-                                val safeBody = item.body.replace("'", "").replace("\"", "")
-                                val cmd = "content insert --uri content://sms --bind address:s:'$safeAddr' --bind body:s:'$safeBody' --bind date:l:${item.date} --bind type:i:${item.type} --bind read:i:${item.read} --bind seen:i:1"
+                                val safeBody = item.body.replace("'", "").replace("\"", "").replace("\n", " ").replace("\r", " ")
+                                val cmd = "su 1000 -c \"content insert --uri content://sms --bind address:s:'$safeAddr' --bind body:s:'$safeBody' --bind date:l:${item.date} --bind type:i:${item.type} --bind read:i:${item.read} --bind seen:i:1\" || content insert --uri content://sms --bind address:s:'$safeAddr' --bind body:s:'$safeBody' --bind date:l:${item.date} --bind type:i:${item.type} --bind read:i:${item.read} --bind seen:i:1"
                                 val res = BaseUtil.execute(cmd, log = false)
                                 if (res.isSuccess) count++
                             }
@@ -546,11 +552,14 @@ class SystemDataRepo @Inject constructor(
                 count
             } finally {
                 // 3. Restore original default SMS app
+                BaseUtil.execute("cmd role set-bypassing-role-qualification false", log = false)
                 if (prevSmsApp.isNotEmpty() && prevSmsApp != pkg) {
                     onProgress("Restoring original default SMS app ($prevSmsApp)...")
-                    BaseUtil.execute("cmd role add-role-holder --user 0 android.app.role.SMS $prevSmsApp")
-                    BaseUtil.execute("cmd role remove-role-holder --user 0 android.app.role.SMS $pkg")
-                    BaseUtil.execute("settings put secure sms_default_application $prevSmsApp")
+                    BaseUtil.execute("cmd role add-role-holder --user 0 android.app.role.SMS $prevSmsApp", log = false)
+                    BaseUtil.execute("cmd role remove-role-holder --user 0 android.app.role.SMS $pkg", log = false)
+                    BaseUtil.execute("settings put secure sms_default_application $prevSmsApp", log = false)
+                    // Force-stop previous messaging app so it re-indexes telephony database on relaunch
+                    BaseUtil.execute("am force-stop '$prevSmsApp'", log = false)
                 }
             }
         }
