@@ -3,12 +3,12 @@ package com.xayah.core.data.repository
 import android.content.Context
 import android.content.Intent
 import androidx.core.content.FileProvider
+import com.topjohnwu.superuser.Shell
 import com.xayah.core.common.util.BuildConfigUtil
 import com.xayah.core.network.model.Release
 import com.xayah.core.network.retrofit.GitHubRepository
+import com.xayah.core.model.util.formatSize
 import com.xayah.core.util.LogUtil
-import com.xayah.core.util.command.BaseUtil
-import com.xayah.core.util.formatSize
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -139,7 +139,7 @@ class UpdateRepo @Inject constructor(
         try {
             // First attempt root installation if available
             runCatching {
-                BaseUtil.exec("pm", "install", "-r", apkFile.absolutePath)
+                Shell.cmd("pm install -r ${apkFile.absolutePath}").submit()
             }
 
             // Launch standard PackageInstaller via FileProvider

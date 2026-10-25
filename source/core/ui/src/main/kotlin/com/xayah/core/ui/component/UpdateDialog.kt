@@ -41,7 +41,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.xayah.core.ui.theme.ThemedColorSchemeKeyTokens
 import com.xayah.core.ui.theme.value
 import com.xayah.core.ui.token.SizeTokens
-import com.xayah.core.util.formatSize
+import com.xayah.core.model.util.formatSize
 
 @Composable
 fun AppUpdateDialog(
