@@ -123,9 +123,13 @@ class SystemDataRepo @Inject constructor(
             BaseUtil.execute("pm grant $pkg android.permission.READ_CALL_LOG")
             BaseUtil.execute("pm grant $pkg android.permission.WRITE_CALL_LOG")
             BaseUtil.execute("pm grant $pkg android.permission.READ_SMS")
+            BaseUtil.execute("pm grant $pkg android.permission.WRITE_SMS")
+            BaseUtil.execute("pm grant $pkg android.permission.RECEIVE_SMS")
+            BaseUtil.execute("pm grant $pkg android.permission.SEND_SMS")
             BaseUtil.execute("pm grant $pkg android.permission.READ_CONTACTS")
             BaseUtil.execute("pm grant $pkg android.permission.WRITE_CONTACTS")
             BaseUtil.execute("appops set $pkg WRITE_SMS allow")
+            BaseUtil.execute("appops set $pkg READ_SMS allow")
         }
     }
 
@@ -432,63 +436,123 @@ class SystemDataRepo @Inject constructor(
             val list = gsonUtil.fromJson<List<SmsItem>>(json, object : TypeToken<List<SmsItem>>() {}.type)
             if (list.isNullOrEmpty()) return@runCatching 0
 
-            onProgress("Checking existing messages to avoid duplicates...")
-            val existingSet = HashSet<String>()
-            context.contentResolver.query(
-                Uri.parse("content://sms"),
-                arrayOf("address", "date", "body"),
-                null,
-                null,
-                null
-            )?.use { c ->
-                val addrIdx = c.getColumnIndex("address")
-                val dateIdx = c.getColumnIndex("date")
-                val bodyIdx = c.getColumnIndex("body")
-                while (c.moveToNext()) {
-                    val addr = if (addrIdx >= 0) c.getString(addrIdx) ?: "" else ""
-                    val date = if (dateIdx >= 0) c.getLong(dateIdx) else 0L
-                    val body = if (bodyIdx >= 0) c.getString(bodyIdx) ?: "" else ""
-                    existingSet.add("$addr:$date:${body.take(20)}")
+            val pkg = context.packageName
+
+            // 1. Query original default SMS app so we can restore it when done
+            onProgress("Acquiring SMS system role...")
+            val getHolder = BaseUtil.execute("cmd role get-role-holders android.app.role.SMS", log = false)
+            var prevSmsApp = getHolder.out.firstOrNull()?.trim() ?: ""
+            if (prevSmsApp.isEmpty()) {
+                val secRes = BaseUtil.execute("settings get secure sms_default_application", log = false)
+                prevSmsApp = secRes.out.firstOrNull()?.trim() ?: ""
+            }
+            if (prevSmsApp == "null" || prevSmsApp == pkg) prevSmsApp = ""
+
+            // 2. Temporarily set BackupVault as default SMS role holder
+            BaseUtil.execute("cmd role add-role-holder --user 0 android.app.role.SMS $pkg")
+            BaseUtil.execute("settings put secure sms_default_application $pkg")
+            BaseUtil.execute("appops set $pkg WRITE_SMS allow")
+            BaseUtil.execute("appops set $pkg READ_SMS allow")
+
+            try {
+                onProgress("Checking existing messages to avoid duplicates...")
+                val existingSet = HashSet<String>()
+                runCatching {
+                    context.contentResolver.query(
+                        Uri.parse("content://sms"),
+                        arrayOf("address", "date", "body"),
+                        null,
+                        null,
+                        null
+                    )?.use { c ->
+                        val addrIdx = c.getColumnIndex("address")
+                        val dateIdx = c.getColumnIndex("date")
+                        val bodyIdx = c.getColumnIndex("body")
+                        while (c.moveToNext()) {
+                            val addr = if (addrIdx >= 0) c.getString(addrIdx) ?: "" else ""
+                            val date = if (dateIdx >= 0) c.getLong(dateIdx) else 0L
+                            val body = if (bodyIdx >= 0) c.getString(bodyIdx) ?: "" else ""
+                            existingSet.add("$addr:$date:${body.take(20)}")
+                        }
+                    }
+                }
+
+                val toInsert = list.filter { !existingSet.contains("${it.address}:${it.date}:${it.body.take(20)}") }
+                onProgress("Restoring ${toInsert.size} new SMS messages...")
+
+                var count = 0
+                val chunks = toInsert.chunked(50)
+                for ((chunkIndex, chunk) in chunks.withIndex()) {
+                    onProgress("Restoring SMS (${chunkIndex * 50}/${toInsert.size})...")
+
+                    // First attempt: batch insert via ContentProviderOperation
+                    val ops = ArrayList<ContentProviderOperation>()
+                    for (item in chunk) {
+                        val targetUri = if (item.type == 2) Uri.parse("content://sms/sent") else Uri.parse("content://sms/inbox")
+                        ops.add(
+                            ContentProviderOperation.newInsert(targetUri)
+                                .withValue("address", item.address)
+                                .withValue("date", item.date)
+                                .apply { if (item.dateSent > 0) withValue("date_sent", item.dateSent) }
+                                .withValue("read", item.read)
+                                .withValue("type", item.type)
+                                .withValue("body", item.body)
+                                .withValue("seen", 1)
+                                .build()
+                        )
+                    }
+
+                    val batchSuccess = runCatching {
+                        context.contentResolver.applyBatch("sms", ops)
+                        count += chunk.size
+                        true
+                    }.getOrDefault(false)
+
+                    if (!batchSuccess) {
+                        // Fallback: individual insert via ContentResolver, with root shell fallback
+                        for (item in chunk) {
+                            val values = ContentValues().apply {
+                                put("address", item.address)
+                                put("date", item.date)
+                                if (item.dateSent > 0) put("date_sent", item.dateSent)
+                                put("read", item.read)
+                                put("type", item.type)
+                                put("body", item.body)
+                                put("seen", 1)
+                                if (item.serviceCenter != null) put("service_center", item.serviceCenter)
+                                if (item.subId >= 0) put("sub_id", item.subId)
+                            }
+
+                            val targetUri = if (item.type == 2) Uri.parse("content://sms/sent") else Uri.parse("content://sms/inbox")
+                            val uri = runCatching { context.contentResolver.insert(targetUri, values) }
+                                .recoverCatching { context.contentResolver.insert(Uri.parse("content://sms"), values) }
+                                .getOrNull()
+
+                            if (uri != null) {
+                                count++
+                            } else {
+                                // Root shell fallback
+                                val safeAddr = item.address.replace("'", "")
+                                val safeBody = item.body.replace("'", "").replace("\"", "")
+                                val cmd = "content insert --uri content://sms --bind address:s:'$safeAddr' --bind body:s:'$safeBody' --bind date:l:${item.date} --bind type:i:${item.type} --bind read:i:${item.read} --bind seen:i:1"
+                                val res = BaseUtil.execute(cmd, log = false)
+                                if (res.isSuccess) count++
+                            }
+                        }
+                    }
+                }
+
+                log { "Restored $count SMS messages." }
+                count
+            } finally {
+                // 3. Restore original default SMS app
+                if (prevSmsApp.isNotEmpty() && prevSmsApp != pkg) {
+                    onProgress("Restoring original default SMS app ($prevSmsApp)...")
+                    BaseUtil.execute("cmd role add-role-holder --user 0 android.app.role.SMS $prevSmsApp")
+                    BaseUtil.execute("cmd role remove-role-holder --user 0 android.app.role.SMS $pkg")
+                    BaseUtil.execute("settings put secure sms_default_application $prevSmsApp")
                 }
             }
-
-            val toInsert = list.filter { !existingSet.contains("${it.address}:${it.date}:${it.body.take(20)}") }
-            onProgress("Restoring ${toInsert.size} new SMS messages...")
-
-            var count = 0
-            toInsert.forEachIndexed { index, item ->
-                if (index % 50 == 0) {
-                    onProgress("Restoring SMS ($index/${toInsert.size})...")
-                }
-
-                val values = ContentValues().apply {
-                    put("address", item.address)
-                    put("date", item.date)
-                    if (item.dateSent > 0) put("date_sent", item.dateSent)
-                    put("read", item.read)
-                    put("type", item.type)
-                    put("body", item.body)
-                    if (item.serviceCenter != null) put("service_center", item.serviceCenter)
-                    if (item.subId >= 0) put("sub_id", item.subId)
-                }
-
-                val targetUri = if (item.type == 2) Uri.parse("content://sms/sent") else Uri.parse("content://sms/inbox")
-                val uri = runCatching { context.contentResolver.insert(targetUri, values) }.getOrNull()
-
-                if (uri != null) {
-                    count++
-                } else {
-                    // Fallback using root shell
-                    val safeAddr = item.address.replace("'", "")
-                    val safeBody = item.body.replace("'", "").replace("\"", "")
-                    val cmd = "content insert --uri $targetUri --bind address:s:'$safeAddr' --bind body:s:'$safeBody' --bind date:l:${item.date} --bind type:i:${item.type} --bind read:i:${item.read}"
-                    val res = BaseUtil.execute(cmd, log = false)
-                    if (res.isSuccess) count++
-                }
-            }
-
-            log { "Restored $count SMS messages." }
-            count
         }
     }
 
@@ -767,6 +831,12 @@ class SystemDataRepo @Inject constructor(
         parseWifiNetworks(xmlContent, usedPath.endsWith(".conf"))
     }
 
+    private fun cleanWifiString(raw: String?): String? {
+        if (raw == null) return null
+        val cleaned = raw.replace("&quot;", "").trim('"', ' ', '\'', '\n', '\r')
+        return cleaned.takeIf { it.isNotEmpty() && it != "null" }
+    }
+
     private fun parseWifiNetworks(content: String, isSupplicant: Boolean): List<WifiNetworkItem> {
         val list = mutableListOf<WifiNetworkItem>()
 
@@ -781,9 +851,9 @@ class SystemDataRepo @Inject constructor(
                 for (line in lines) {
                     val trimmed = line.trim()
                     if (trimmed.startsWith("ssid=")) {
-                        ssid = trimmed.substringAfter("ssid=").trim('"', ' ')
+                        ssid = cleanWifiString(trimmed.substringAfter("ssid="))
                     } else if (trimmed.startsWith("psk=")) {
-                        psk = trimmed.substringAfter("psk=").trim('"', ' ')
+                        psk = cleanWifiString(trimmed.substringAfter("psk="))
                     } else if (trimmed.startsWith("key_mgmt=")) {
                         keyMgmt = trimmed.substringAfter("key_mgmt=").trim()
                     }
@@ -802,17 +872,16 @@ class SystemDataRepo @Inject constructor(
             val netData = block.substringBefore("</Network>")
 
             // Extract SSID
-            val ssidMatch = Regex("""<string name="SSID">"?(.*?)"?</string>""").find(netData)
-            val ssid = ssidMatch?.groupValues?.getOrNull(1)?.replace("&quot;", "")?.trim() ?: continue
-            if (ssid.isEmpty() || ssid == "null") continue
+            val ssidMatch = Regex("""<string name="SSID">(.*?)</string>""").find(netData)
+            val ssid = cleanWifiString(ssidMatch?.groupValues?.getOrNull(1)) ?: continue
 
             // Extract Password (PreSharedKey)
-            val pskMatch = Regex("""<string name="Pre(?:S|s)haredKey">"?(.*?)"?</string>""").find(netData)
-            val psk = pskMatch?.groupValues?.getOrNull(1)?.replace("&quot;", "")?.trim()?.takeIf { it != "null" }
+            val pskMatch = Regex("""<string name="Pre[Ss]haredKey">(.*?)</string>""").find(netData)
+            val psk = cleanWifiString(pskMatch?.groupValues?.getOrNull(1))
 
             // Extract ConfigKey
-            val cfgMatch = Regex("""<string name="ConfigKey">"?(.*?)"?</string>""").find(netData)
-            val configKey = cfgMatch?.groupValues?.getOrNull(1)?.replace("&quot;", "")?.trim()
+            val cfgMatch = Regex("""<string name="ConfigKey">(.*?)</string>""").find(netData)
+            val configKey = cleanWifiString(cfgMatch?.groupValues?.getOrNull(1))
 
             // Extract Security
             val secType = when {
@@ -885,50 +954,76 @@ class SystemDataRepo @Inject constructor(
             val rawJson = readFromBackup(getWifiJsonPath())
             if (rawXml.isEmpty() && rawJson.isEmpty()) error("No Wi-Fi backup snapshot found")
 
-            onProgress("Locating device Wi-Fi store...")
-            val paths = getWifiConfigPaths()
-            var targetPath: String? = null
+            // 1. Parse network list from json or xml
+            val networks = if (rawJson.isNotEmpty()) {
+                runCatching {
+                    gsonUtil.fromJson<List<WifiNetworkItem>>(rawJson, object : TypeToken<List<WifiNetworkItem>>() {}.type)
+                }.getOrDefault(emptyList())
+            } else parseWifiNetworks(rawXml, false)
 
-            for (p in paths) {
-                val check = BaseUtil.execute("[ -f $p ] && echo 'exists'", log = false)
-                if (check.isSuccess && check.out.contains("exists")) {
-                    targetPath = p
-                    break
-                }
-            }
-
-            if (targetPath == null) {
-                // Default to modern apexdata path or misc/wifi
-                val apexDirCheck = BaseUtil.execute("[ -d /data/misc/apexdata/com.android.wifi ] && echo 'yes'", log = false)
-                targetPath = if (apexDirCheck.isSuccess && apexDirCheck.out.contains("yes")) {
-                    "/data/misc/apexdata/com.android.wifi/WifiConfigStore.xml"
-                } else {
-                    "/data/misc/wifi/WifiConfigStore.xml"
-                }
-            }
-
-            onProgress("Writing Wi-Fi configurations to $targetPath...")
+            onProgress("Writing Wi-Fi configurations to system store...")
             if (rawXml.isNotEmpty()) {
                 val tmpFile = File(context.cacheDir, "wifi_restore_tmp.xml")
                 tmpFile.writeText(rawXml)
-                BaseUtil.execute("cp '${tmpFile.absolutePath}' '$targetPath'")
-                BaseUtil.execute("chmod 600 '$targetPath'")
-                BaseUtil.execute("chown 1010:1010 '$targetPath'")
-                BaseUtil.execute("chcon u:object_r:wifi_data_file:s0 '$targetPath'")
+
+                // Temporarily disable wifi while writing xml store
+                BaseUtil.execute("svc wifi disable", log = false)
+
+                val targetStores = listOf(
+                    "/data/misc/apexdata/com.android.wifi/WifiConfigStore.xml",
+                    "/data/misc/wifi/WifiConfigStore.xml"
+                )
+
+                for (targetPath in targetStores) {
+                    val parentDir = PathUtil.getParentPath(targetPath)
+                    val dirCheck = BaseUtil.execute("[ -d '$parentDir' ] && echo 'exists'", log = false)
+                    if (dirCheck.isSuccess && dirCheck.out.contains("exists")) {
+                        BaseUtil.execute("cp '${tmpFile.absolutePath}' '$targetPath'")
+                        BaseUtil.execute("chmod 600 '$targetPath'")
+                        BaseUtil.execute("chown 1000:1000 '$targetPath'")
+                        BaseUtil.execute("restorecon -F '$targetPath' || chcon u:object_r:apex_system_server_data_file:s0 '$targetPath'")
+                        BaseUtil.execute("rm -f '$targetPath.encrypted-checksum' '${targetPath.removeSuffix(".xml")}'*.checksum", log = false)
+                    }
+                }
                 tmpFile.delete()
+
+                // Re-enable wifi so subsystem can reload
+                BaseUtil.execute("svc wifi enable", log = false)
             }
 
-            onProgress("Reloading Wi-Fi subsystem...")
-            BaseUtil.execute("cmd -w wifi reload || cmd wifi reload || (svc wifi disable && sleep 1 && svc wifi enable)")
+            // 2. Inject each saved network directly into Android's live WifiManager via shell
+            onProgress("Registering ${networks.size} saved Wi-Fi networks...")
+            // Ensure Wi-Fi is active
+            BaseUtil.execute("cmd -w wifi set-wifi-enabled enabled || cmd wifi set-wifi-enabled enabled || svc wifi enable", log = false)
 
-            // Also read networks count
-            val count = if (rawJson.isNotEmpty()) {
-                val list = gsonUtil.fromJson<List<WifiNetworkItem>>(rawJson, object : TypeToken<List<WifiNetworkItem>>() {}.type)
-                list?.size ?: 0
-            } else 1
+            var injectedCount = 0
+            for ((idx, net) in networks.withIndex()) {
+                onProgress("Registering Wi-Fi (${idx + 1}/${networks.size}): ${net.ssid}...")
+                val ssid = cleanWifiString(net.ssid) ?: continue
+                val psk = cleanWifiString(net.password)
+                val sec = when {
+                    net.securityType.contains("SAE") || net.securityType.contains("WPA3") -> "wpa3"
+                    psk.isNullOrEmpty() || net.securityType.contains("OPEN") || net.securityType.contains("NONE") -> "open"
+                    net.securityType.contains("WEP") -> "wep"
+                    else -> "wpa2"
+                }
 
-            log { "Restored Wi-Fi configurations to $targetPath." }
-            count
+                val hiddenFlag = if (net.hiddenSsid) "-d" else ""
+                val escapedSsid = ssid.replace("\"", "\\\"").replace("'", "\\'")
+
+                val cmd = if (sec == "open" || psk.isNullOrEmpty()) {
+                    "cmd -w wifi connect-network \"$escapedSsid\" open $hiddenFlag || cmd wifi connect-network \"$escapedSsid\" open $hiddenFlag"
+                } else {
+                    val escapedPsk = psk.replace("\"", "\\\"").replace("'", "\\'")
+                    "cmd -w wifi connect-network \"$escapedSsid\" $sec \"$escapedPsk\" $hiddenFlag || cmd wifi connect-network \"$escapedSsid\" $sec \"$escapedPsk\" $hiddenFlag"
+                }
+
+                val res = BaseUtil.execute(cmd, log = false)
+                if (res.isSuccess) injectedCount++
+            }
+
+            log { "Restored ${networks.size} Wi-Fi networks (injected $injectedCount via cmd wifi)." }
+            networks.size
         }
     }
 
@@ -936,7 +1031,8 @@ class SystemDataRepo @Inject constructor(
         val json = readFromBackup(getWifiJsonPath())
         if (json.isNotEmpty()) {
             runCatching {
-                gsonUtil.fromJson<List<WifiNetworkItem>>(json, object : TypeToken<List<WifiNetworkItem>>() {}.type)
+                val list = gsonUtil.fromJson<List<WifiNetworkItem>>(json, object : TypeToken<List<WifiNetworkItem>>() {}.type)
+                list?.map { it.copy(ssid = cleanWifiString(it.ssid) ?: it.ssid, password = cleanWifiString(it.password)) } ?: emptyList()
             }.getOrDefault(emptyList())
         } else {
             emptyList()
