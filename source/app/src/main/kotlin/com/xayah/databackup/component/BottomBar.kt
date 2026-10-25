@@ -81,11 +81,12 @@ fun BackupVaultBottomBar(
 
     AnimatedVisibility(
         visible = isVisible,
+        modifier = modifier,
         enter = slideInVertically(initialOffsetY = { it }, animationSpec = tween(300, easing = FastOutSlowInEasing)),
         exit = slideOutVertically(targetOffsetY = { it }, animationSpec = tween(250, easing = FastOutSlowInEasing)),
     ) {
         Surface(
-            modifier = modifier
+            modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = SizeTokens.Level12, vertical = SizeTokens.Level8)
                 .navigationBarsPadding(),

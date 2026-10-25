@@ -2,6 +2,12 @@ name: Build Personal
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'source/**'
+      - '.github/workflows/build-personal.yaml'
 
 jobs:
   build:
@@ -16,6 +22,58 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Notify Telegram (Build Started)
+        id: tg_start
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+        run: |
+          if [ -z "$TG_BOT_TOKEN" ] || [ -z "$TG_CHAT_ID" ]; then
+            echo "::warning::Telegram credentials not set - skipping start notification"
+            exit 0
+          fi
+          CLEAN_TOKEN="${TG_BOT_TOKEN#bot}"
+          CLEAN_TOKEN="$(echo -n "$CLEAN_TOKEN" | tr -d '[:space:]' | tr -d '"' | tr -d "'")"
+          CLEAN_CHAT="$(echo -n "$TG_CHAT_ID" | tr -d '[:space:]' | tr -d '"' | tr -d "'")"
+
+          COMMIT_MSG=$(git log -1 --pretty=%s | sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g')
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          START_TIME=$(date -u '+%Y-%m-%d %H:%M UTC')
+
+          START_TEXT="🔨 <b>BackupVault Build Started</b>
+
+📦 <b>Repository:</b> <code>${GITHUB_REPOSITORY}</code>
+🌿 <b>Branch:</b> <code>${GITHUB_REF_NAME}</code>
+📝 <b>Commit:</b> <a href=\"${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}\"><code>${SHORT_SHA}</code></a> — <i>${COMMIT_MSG}</i>
+👤 <b>Triggered by:</b> ${GITHUB_ACTOR}
+🕒 <b>Started at:</b> ${START_TIME}
+⏳ <b>Status:</b> 🔨 Compiling arm64 Foss Release APK...
+🔗 <a href=\"${RUN_URL}\">View Live GitHub Actions Run</a>"
+
+          RESP=$(python3 -c "
+import urllib.request, json
+url = 'https://api.telegram.org/bot${CLEAN_TOKEN}/sendMessage'
+payload = json.dumps({
+    'chat_id': '${CLEAN_CHAT}',
+    'text': '''${START_TEXT}''',
+    'parse_mode': 'HTML',
+    'disable_web_page_preview': True
+}).encode('utf-8')
+req = urllib.request.Request(url, data=payload, headers={'Content-Type': 'application/json'})
+try:
+    with urllib.request.urlopen(req) as response:
+        print(response.read().decode('utf-8'))
+except Exception as e:
+    print('{}')
+" 2>/dev/null || true)
+
+          MSG_ID=$(echo "$RESP" | grep -o '"message_id":[0-9]*' | head -n 1 | cut -d':' -f2 || true)
+          echo "start_msg_id=${MSG_ID}" >> $GITHUB_ENV
+          echo "Started build notification sent. Message ID: ${MSG_ID}"
 
       - name: Validate gradle wrapper
         uses: gradle/wrapper-validation-action@v1
@@ -33,18 +91,24 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build with gradle
-        run: ./gradlew assembleArm64-v8aFossRelease --daemon --parallel
+        id: gradle_build
+        run: |
+          set -o pipefail
+          ./gradlew assembleArm64-v8aFossRelease --daemon --parallel 2>&1 | tee ../build.log
 
       - name: Move APKs
+        if: success()
         run: mv ./*/build/outputs/apk/*/release/*.apk .
 
       - name: Upload APKs
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: BackupVault-v1.0
           path: '**/*.apk'
 
       - name: Send APK to Telegram
+        if: success()
         env:
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
@@ -59,17 +123,50 @@ jobs:
           CLEAN_CHAT="$(echo -n "$TG_CHAT_ID" | tr -d '[:space:]' | tr -d '"' | tr -d "'")"
 
           echo "Bot token length: ${#CLEAN_TOKEN}, Chat ID: ${CLEAN_CHAT}"
-          ME_CHECK=$(curl -sS "https://api.telegram.org/bot${CLEAN_TOKEN}/getMe" || true)
-          echo "Telegram getMe response: $ME_CHECK"
+
+          # Update initial message if available
+          if [ -n "${start_msg_id:-}" ]; then
+            python3 -c "
+import urllib.request, json
+url = 'https://api.telegram.org/bot${CLEAN_TOKEN}/editMessageText'
+payload = json.dumps({
+    'chat_id': '${CLEAN_CHAT}',
+    'message_id': int('${start_msg_id}'),
+    'text': '✅ <b>BackupVault Build Successful!</b>\nAPK file uploaded below.',
+    'parse_mode': 'HTML'
+}).encode('utf-8')
+req = urllib.request.Request(url, data=payload, headers={'Content-Type': 'application/json'})
+try:
+    urllib.request.urlopen(req)
+except Exception:
+    pass
+" 2>/dev/null || true
+          fi
 
           APK_FILE=$(ls -1 -- *.apk | head -n 1)
-          CAPTION=$(printf 'BackupVault %s\ncommit: %s\nrun: %s/%s/actions/runs/%s\nbuilt %s' \
-            "$APK_FILE" \
-            "${GITHUB_SHA::7}" \
-            "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" \
-            "$(date -u '+%Y-%m-%d %H:%M UTC')")
+          if [ -z "$APK_FILE" ]; then
+            echo "::warning::No APK file found to upload"
+            exit 0
+          fi
+
+          APK_SIZE=$(du -h "$APK_FILE" | cut -f1)
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          COMMIT_MSG=$(git log -1 --pretty=%s | sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g')
+          BUILT_TIME=$(date -u '+%Y-%m-%d %H:%M UTC')
+          RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+
+          CAPTION="✅ <b>BackupVault v1.0 — Build Successful</b>
+
+📦 <b>File:</b> <code>${APK_FILE}</code> (${APK_SIZE})
+🌿 <b>Branch:</b> <code>${GITHUB_REF_NAME}</code>
+📝 <b>Commit:</b> <a href=\"${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}\"><code>${SHORT_SHA}</code></a> — <i>${COMMIT_MSG}</i>
+👤 <b>Built by:</b> ${GITHUB_ACTOR}
+🕒 <b>Built at:</b> ${BUILT_TIME}
+🔗 <a href=\"${RUN_URL}\">View GitHub Actions Run</a>"
+
           RESPONSE=$(curl -sS --max-time 620 \
             -F chat_id="${CLEAN_CHAT}" \
+            -F parse_mode="HTML" \
             -F caption="${CAPTION}" \
             -F "document=@${APK_FILE}" \
             "https://api.telegram.org/bot${CLEAN_TOKEN}/sendDocument" 2>curl_err.txt) || true
@@ -79,4 +176,106 @@ jobs:
             echo "::warning::Telegram upload failed"
             echo "$RESPONSE"
             cat curl_err.txt
+          fi
+
+      - name: Upload build log artifact on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-failure-log
+          path: |
+            build.log
+            ../build.log
+          if-no-files-found: ignore
+
+      - name: Send Failure Notification & Build Log to Telegram
+        if: failure()
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+        run: |
+          if [ -z "$TG_BOT_TOKEN" ] || [ -z "$TG_CHAT_ID" ]; then
+            echo "::warning::Telegram credentials not set - skipping failure notification"
+            exit 0
+          fi
+          CLEAN_TOKEN="${TG_BOT_TOKEN#bot}"
+          CLEAN_TOKEN="$(echo -n "$CLEAN_TOKEN" | tr -d '[:space:]' | tr -d '"' | tr -d "'")"
+          CLEAN_CHAT="$(echo -n "$TG_CHAT_ID" | tr -d '[:space:]' | tr -d '"' | tr -d "'")"
+
+          RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          COMMIT_MSG=$(git log -1 --pretty=%s | sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g')
+          FAILED_TIME=$(date -u '+%Y-%m-%d %H:%M UTC')
+
+          LOG_FILE=""
+          if [ -f "../build.log" ]; then
+            LOG_FILE="../build.log"
+          elif [ -f "build.log" ]; then
+            LOG_FILE="build.log"
+          fi
+
+          # Extract error summary from log (last 25 lines)
+          ERROR_SNIPPET="No build log found."
+          if [ -n "$LOG_FILE" ] && [ -f "$LOG_FILE" ]; then
+            ERROR_SNIPPET=$(tail -n 25 "$LOG_FILE" | sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g')
+          fi
+
+          FAIL_TEXT="❌ <b>BackupVault Build FAILED!</b>
+
+📦 <b>Repository:</b> <code>${GITHUB_REPOSITORY}</code>
+🌿 <b>Branch:</b> <code>${GITHUB_REF_NAME}</code>
+📝 <b>Commit:</b> <a href=\"${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}\"><code>${SHORT_SHA}</code></a> — <i>${COMMIT_MSG}</i>
+👤 <b>Author:</b> ${GITHUB_ACTOR}
+🕒 <b>Failed at:</b> ${FAILED_TIME}
+🔗 <a href=\"${RUN_URL}\">View Full GitHub Actions Log</a>
+
+⚠️ <b>Error Preview:</b>
+<pre>${ERROR_SNIPPET}</pre>"
+
+          # 1. Update initial message if available
+          if [ -n "${start_msg_id:-}" ]; then
+            python3 -c "
+import urllib.request, json
+url = 'https://api.telegram.org/bot${CLEAN_TOKEN}/editMessageText'
+payload = json.dumps({
+    'chat_id': '${CLEAN_CHAT}',
+    'message_id': int('${start_msg_id}'),
+    'text': '❌ <b>BackupVault Build Failed!</b>\nSee detailed error log below.',
+    'parse_mode': 'HTML'
+}).encode('utf-8')
+req = urllib.request.Request(url, data=payload, headers={'Content-Type': 'application/json'})
+try:
+    urllib.request.urlopen(req)
+except Exception:
+    pass
+" 2>/dev/null || true
+          fi
+
+          # 2. Send failure alert message with error preview
+          python3 -c "
+import urllib.request, json
+url = 'https://api.telegram.org/bot${CLEAN_TOKEN}/sendMessage'
+payload = json.dumps({
+    'chat_id': '${CLEAN_CHAT}',
+    'text': '''${FAIL_TEXT}''',
+    'parse_mode': 'HTML',
+    'disable_web_page_preview': True
+}).encode('utf-8')
+req = urllib.request.Request(url, data=payload, headers={'Content-Type': 'application/json'})
+try:
+    with urllib.request.urlopen(req) as resp:
+        print(resp.read().decode('utf-8'))
+except Exception as e:
+    print('Failed to send failure message:', e)
+" 2>/dev/null || true
+
+          # 3. Send full build log file as document
+          if [ -n "$LOG_FILE" ] && [ -f "$LOG_FILE" ]; then
+            CAPTION="❌ Build Log — BackupVault (${SHORT_SHA})
+Run: ${RUN_URL}"
+            curl -sS --max-time 300 \
+              -F chat_id="${CLEAN_CHAT}" \
+              -F caption="${CAPTION}" \
+              -F "document=@${LOG_FILE};filename=build_failed_${GITHUB_RUN_ID}_${SHORT_SHA}.log" \
+              "https://api.telegram.org/bot${CLEAN_TOKEN}/sendDocument" || true
           fi

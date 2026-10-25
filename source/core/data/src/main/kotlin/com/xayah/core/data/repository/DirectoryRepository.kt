@@ -75,39 +75,28 @@ class DirectoryRepository @Inject constructor(
 
     suspend fun update() {
         withIOContext {
+            val defaultParent = DEFAULT_PATH_PARENT
+            val defaultChild = ConstantUtil.DEFAULT_PATH_CHILD
+
             // Inactivate all directories
             directoryDao.updateActive(active = false)
 
-            // Internal storage
-            val normalizedDefaultParent = DEFAULT_PATH_PARENT.trimEnd('/')
-            val internalList = rootService.listFilePaths(ConstantUtil.STORAGE_EMULATED_PATH, listFiles = false)
-                .map { it.trimEnd('/') }
-                .filter { it.substringAfterLast("/").toIntOrNull() != null }
-                .distinct()
-                .toMutableList()
-            if (internalList.contains(normalizedDefaultParent).not()) {
-                internalList.add(normalizedDefaultParent)
-            }
-            val uniqueParents = internalList.distinct()
+            // Clean obsolete, duplicate, or secondary-profile internal storage records
+            directoryDao.cleanObsoleteInternal(defaultParent = defaultParent, defaultChild = defaultChild)
 
-            directoryDao.cleanObsoleteInternal(ConstantUtil.DEFAULT_PATH_CHILD)
-
+            // Internal storage: Exactly one entry for primary user storage (/storage/emulated/0)
             val internalDirs = mutableListOf<DirectoryUpsertEntity>()
-            for (storageItem in uniqueParents) {
-                // e.g. /data/media/0
-                runCatching {
-                    val child = ConstantUtil.DEFAULT_PATH_CHILD
-                    internalDirs.add(
-                        DirectoryUpsertEntity(
-                            id = directoryDao.queryId(parent = storageItem, child = child),
-                            title = "",
-                            parent = storageItem,
-                            child = child,
-                            storageType = StorageType.INTERNAL,
-                            active = true,
-                        )
+            runCatching {
+                internalDirs.add(
+                    DirectoryUpsertEntity(
+                        id = directoryDao.queryId(parent = defaultParent, child = defaultChild),
+                        title = "",
+                        parent = defaultParent,
+                        child = defaultChild,
+                        storageType = StorageType.INTERNAL,
+                        active = true,
                     )
-                }
+                )
             }
             directoryDao.upsert(internalDirs)
 
@@ -117,13 +106,12 @@ class DirectoryRepository @Inject constructor(
             for (storageItem in externalList) {
                 // e.g. /mnt/media_rw/E7F9-FA61
                 runCatching {
-                    val child = ConstantUtil.DEFAULT_PATH_CHILD
                     externalDirs.add(
                         DirectoryUpsertEntity(
-                            id = directoryDao.queryId(parent = storageItem, child = child),
+                            id = directoryDao.queryId(parent = storageItem, child = defaultChild),
                             title = "",
                             parent = storageItem,
-                            child = child,
+                            child = defaultChild,
                             storageType = StorageType.EXTERNAL,
                             active = true,
                         )
@@ -134,7 +122,7 @@ class DirectoryRepository @Inject constructor(
 
             // Activate backup/restore directories except external directories
             directoryDao.updateActive(excludeType = StorageType.EXTERNAL, active = true)
-            directoryDao.cleanObsoleteInternal(ConstantUtil.DEFAULT_PATH_CHILD)
+            directoryDao.cleanObsoleteInternal(defaultParent = defaultParent, defaultChild = defaultChild)
 
             // Read statFs of each storage
             directoryDao.queryActiveDirectories().forEach { entity ->

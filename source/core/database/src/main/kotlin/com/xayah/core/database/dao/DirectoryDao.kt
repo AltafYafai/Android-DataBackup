@@ -47,8 +47,8 @@ interface DirectoryDao {
     @Query("UPDATE DirectoryEntity SET selected = CASE WHEN id = :id THEN 1 ELSE 0 END")
     suspend fun select(id: Long)
 
-    @Query("DELETE FROM DirectoryEntity WHERE storageType = 'INTERNAL' AND (child != :currentChild OR id NOT IN (SELECT MIN(id) FROM DirectoryEntity WHERE storageType = 'INTERNAL' GROUP BY parent))")
-    suspend fun cleanObsoleteInternal(currentChild: String)
+    @Query("DELETE FROM DirectoryEntity WHERE storageType = 'INTERNAL' AND (parent != :defaultParent OR child != :defaultChild OR id NOT IN (SELECT MIN(id) FROM DirectoryEntity WHERE storageType = 'INTERNAL' AND parent = :defaultParent AND child = :defaultChild))")
+    suspend fun cleanObsoleteInternal(defaultParent: String, defaultChild: String)
 
     @Delete(entity = DirectoryEntity::class)
     suspend fun delete(item: DirectoryEntity)

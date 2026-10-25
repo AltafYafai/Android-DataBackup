@@ -5,6 +5,7 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ChevronRight
@@ -21,6 +22,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.xayah.core.ui.component.InnerTopSpacer
 import com.xayah.core.ui.component.SetOnResume
+import com.xayah.core.ui.token.SizeTokens
 import com.xayah.core.ui.util.LocalNavController
 
 @Composable
@@ -47,6 +49,7 @@ internal fun ListScreen(uiState: ListUiState, onFabClick: () -> Unit) {
         floatingActionButton = {
             AnimatedVisibility(visible = uiState is ListUiState.Success && uiState.selected != 0L, enter = scaleIn(), exit = scaleOut()) {
                 ExtendedFloatingActionButton(
+                    modifier = Modifier.padding(bottom = SizeTokens.Level64 + SizeTokens.Level16),
                     onClick = onFabClick,
                     icon = { Icon(Icons.Rounded.ChevronRight, null) },
                     text = { Text(text = stringResource(id = R.string._continue)) },

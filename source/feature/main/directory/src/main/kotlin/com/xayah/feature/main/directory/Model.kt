@@ -15,9 +15,6 @@ fun DirectoryEntity.icon() = when (storageType) {
 
 fun DirectoryEntity.pathDisplay() = when (storageType) {
     StorageType.EXTERNAL -> if (type.isEmpty()) path else "$path ($type)"
-    StorageType.INTERNAL -> {
-        val userId = parent.substringAfterLast("/").toIntOrNull()
-        if (userId != null && userId != 0) "$path (User $userId)" else path
-    }
+    StorageType.INTERNAL -> path
     else -> path
 }

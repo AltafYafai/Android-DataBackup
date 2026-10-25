@@ -7,8 +7,10 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -154,6 +156,8 @@ fun PageRestore() {
                     viewModel.emitIntentOnIO(IndexUiIntent.ToReload(navController))
                 }
             }
+
+            Spacer(modifier = Modifier.height(SizeTokens.Level64 + SizeTokens.Level32))
         }
     }
 }
