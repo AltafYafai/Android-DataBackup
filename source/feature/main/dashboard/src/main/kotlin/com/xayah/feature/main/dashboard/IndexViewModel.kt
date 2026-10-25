@@ -41,15 +41,14 @@ class IndexViewModel @Inject constructor(
             is IndexUiIntent.Update -> {
                 directoryRepo.updateSelected()
 
-                if (BuildConfigUtil.FLAVOR_feature == ConstantUtil.FLAVOR_PREMIUM) {
-                    // Premium only
-                    runCatching {
-                        val release = githubRepo.getLatestRelease()
-                        if (release.name != BuildConfigUtil.VERSION_NAME) {
-                            emitState(state.copy(latestRelease = release))
-                        } else {
-                            emitState(state.copy(latestRelease = null))
-                        }
+                runCatching {
+                    val release = githubRepo.getLatestRelease()
+                    val relVer = release.tagName.ifEmpty { release.name }.trim().removePrefix("v").removePrefix("V")
+                    val curVer = BuildConfigUtil.VERSION_NAME.trim().removePrefix("v").removePrefix("V")
+                    if (relVer.isNotEmpty() && relVer != curVer) {
+                        emitState(state.copy(latestRelease = release))
+                    } else {
+                        emitState(state.copy(latestRelease = null))
                     }
                 }
             }

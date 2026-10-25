@@ -270,7 +270,8 @@ data class PackageEntity(
 
 
 fun PackageEntity.asExternalModel(): App {
-    val bytes = if (storageStatsBytes > 0) storageStatsBytes else displayStatsBytes
+    val totalDisplayBytes = displayStatsBytes
+    val bytes = if (totalDisplayBytes > 0) totalDisplayBytes else storageStatsBytes
     return App(
         id = id,
         packageName = packageName,
@@ -296,4 +297,5 @@ data class PackageUpdateEntity(
     @Embedded(prefix = "packageInfo_") var packageInfo: PackageInfo,
     @Embedded(prefix = "extraInfo_") var extraInfo: PackageExtraInfo,
     @Embedded(prefix = "storageStats_") var storageStats: PackageStorageStats,
+    @Embedded(prefix = "displayStats_") var displayStats: PackageDataStats = PackageDataStats(),
 )

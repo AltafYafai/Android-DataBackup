@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -43,6 +44,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -212,7 +214,7 @@ fun ProcessingTelemetryHud(
                 }
             }
 
-            // 2. Track 1: Overall Progress (Humatic)
+            // 2. Track 1: Overall Progress (Thick & Green)
             Column(modifier = Modifier.fillMaxWidth()) {
                 val batchClamped = batchCurrent.coerceIn(0, batchTotal.coerceAtLeast(1))
                 val batchPercent = if (batchTotal > 0) ((batchProgress.coerceIn(0f, 1f)) * 100).toInt() else 0
@@ -224,37 +226,44 @@ fun ProcessingTelemetryHud(
                     Text(
                         text = "Total Progress",
                         style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = ThemedColorSchemeKeyTokens.OnSurfaceVariant.value,
-                        fontSize = 11.sp
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF2E7D32),
+                        fontSize = 12.sp
                     )
                     Text(
                         text = if (isFinished) "All $batchTotal completed" else "$batchClamped of $batchTotal ($batchPercent%)",
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,
-                        color = ThemedColorSchemeKeyTokens.Primary.value,
-                        fontSize = 11.sp
+                        color = Color(0xFF2E7D32),
+                        fontSize = 12.sp
                     )
                 }
                 Spacer(modifier = Modifier.height(SizeTokens.Level6))
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(8.dp)
+                        .height(16.dp)
                         .clip(CircleShape)
-                        .background(ThemedColorSchemeKeyTokens.SurfaceContainerHighest.value)
+                        .background(Color(0xFF4CAF50).copy(alpha = 0.15f))
                 ) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth(animatedBatchProgress.value.coerceIn(0f, 1f))
                             .fillMaxHeight()
                             .clip(CircleShape)
-                            .background(ThemedColorSchemeKeyTokens.Primary.value.copy(alpha = 0.9f))
+                            .background(
+                                Brush.horizontalGradient(
+                                    listOf(
+                                        Color(0xFF2E7D32),
+                                        Color(0xFF4CAF50)
+                                    )
+                                )
+                            )
                     )
                 }
             }
 
-            // 3. Track 2: Current Task (Humatic)
+            // 3. Track 2: Current Task (Thin & Light Blue)
             Column(modifier = Modifier.fillMaxWidth()) {
                 val streamPercent = (animatedStreamProgress.value * 100).toInt().coerceIn(0, 100)
                 val cleanStreamTitle = streamTitle
@@ -269,14 +278,14 @@ fun ProcessingTelemetryHud(
                         text = "Current Step",
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.SemiBold,
-                        color = ThemedColorSchemeKeyTokens.OnSurfaceVariant.value,
+                        color = Color(0xFF0288D1),
                         fontSize = 11.sp
                     )
                     Text(
                         text = if (cleanStreamTitle.isNotEmpty()) "$cleanStreamTitle • $streamPercent%" else "$streamPercent%",
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,
-                        color = ThemedColorSchemeKeyTokens.Primary.value,
+                        color = Color(0xFF0288D1),
                         fontSize = 11.sp
                     )
                 }
@@ -284,9 +293,9 @@ fun ProcessingTelemetryHud(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(10.dp)
+                        .height(5.dp)
                         .clip(CircleShape)
-                        .background(ThemedColorSchemeKeyTokens.SurfaceContainerHighest.value)
+                        .background(Color(0xFF38BDF8).copy(alpha = 0.18f))
                 ) {
                     Box(
                         modifier = Modifier
@@ -296,8 +305,8 @@ fun ProcessingTelemetryHud(
                             .background(
                                 Brush.horizontalGradient(
                                     listOf(
-                                        ThemedColorSchemeKeyTokens.Primary.value,
-                                        ThemedColorSchemeKeyTokens.Secondary.value
+                                        Color(0xFF0288D1),
+                                        Color(0xFF38BDF8)
                                     )
                                 )
                             )
@@ -305,7 +314,7 @@ fun ProcessingTelemetryHud(
                 }
             }
 
-            // 4. Data Breakdown Grid Cells (Humatic & Expressive)
+            // 4. Data Breakdown Cards (divided into 3 parts: icon+name, size, done/processing)
             if (partitions.isNotEmpty()) {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Row(
@@ -331,73 +340,135 @@ fun ProcessingTelemetryHud(
                     }
                     Spacer(modifier = Modifier.height(SizeTokens.Level8))
 
-                    val columns = if (partitions.size <= 2) partitions.size else 3
                     Column(
                         modifier = Modifier.fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(SizeTokens.Level6)
                     ) {
-                        partitions.chunked(columns).forEachIndexed { rowIndex, rowPartitions ->
-                            Row(
+                        partitions.forEachIndexed { idx, part ->
+                            val isCompleted = part.state == OperationState.DONE || (idx < activePartitionIndex)
+                            val isSkip = part.state == OperationState.SKIP
+                            val isError = part.state == OperationState.ERROR
+                            val isActive = part.state == OperationState.PROCESSING || (idx == activePartitionIndex && !isCompleted && !isSkip && !isError && !isFinished)
+
+                            val rawTitle = part.title
+                                .replace(Regex("^(Backup|Restore)\\s*", RegexOption.IGNORE_CASE), "")
+                                .trim()
+
+                            val iconRes = when (rawTitle.uppercase()) {
+                                "APK" -> com.xayah.core.ui.R.drawable.ic_rounded_android
+                                "USER" -> com.xayah.core.ui.R.drawable.ic_rounded_person
+                                "USER_DE" -> com.xayah.core.ui.R.drawable.ic_rounded_manage_accounts
+                                "DATA" -> com.xayah.core.ui.R.drawable.ic_rounded_database
+                                "OBB" -> com.xayah.core.ui.R.drawable.ic_rounded_stadia_controller
+                                "MEDIA" -> com.xayah.core.ui.R.drawable.ic_rounded_image
+                                else -> com.xayah.core.ui.R.drawable.ic_rounded_package_2
+                            }
+
+                            val displayTitle = when (rawTitle.uppercase()) {
+                                "APK" -> "App"
+                                "USER" -> "Data"
+                                "USER_DE" -> "Encrypted"
+                                "DATA" -> "Storage"
+                                "OBB" -> "Assets"
+                                "MEDIA" -> "Media"
+                                else -> rawTitle
+                            }
+
+                            val sizeText = if (part.bytes > 0) part.bytes.toDouble().formatSize() else "--"
+
+                            val pct = when {
+                                part.content.endsWith("%") -> part.content
+                                part.progress > 0f -> "${(part.progress * 100).toInt()}%"
+                                streamProgress > 0f -> "${(streamProgress * 100).toInt()}%"
+                                else -> "${(animatedStreamProgress.value * 100).toInt().coerceAtLeast(1)}%"
+                            }
+
+                            val cardBgColor = when {
+                                isActive -> Color(0xFF38BDF8).copy(alpha = 0.12f)
+                                isCompleted -> ThemedColorSchemeKeyTokens.PrimaryContainer.value.copy(alpha = 0.35f)
+                                isError -> ThemedColorSchemeKeyTokens.ErrorContainer.value.copy(alpha = 0.3f)
+                                isSkip -> ThemedColorSchemeKeyTokens.SurfaceContainerHighest.value.copy(alpha = 0.25f)
+                                else -> ThemedColorSchemeKeyTokens.SurfaceContainerHighest.value.copy(alpha = 0.4f)
+                            }
+
+                            Surface(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(SizeTokens.Level6)
+                                shape = RoundedCornerShape(12.dp),
+                                color = cardBgColor,
+                                border = if (isActive) BorderStroke(1.2.dp, Color(0xFF38BDF8)) else BorderStroke(0.8.dp, ThemedColorSchemeKeyTokens.OutlineVariant.value.copy(alpha = 0.2f))
                             ) {
-                                rowPartitions.forEachIndexed { colIndex, part ->
-                                    val idx = rowIndex * columns + colIndex
-                                    val isCompleted = part.state == OperationState.DONE || (idx < activePartitionIndex)
-                                    val isSkip = part.state == OperationState.SKIP
-                                    val isError = part.state == OperationState.ERROR
-                                    val isActive = part.state == OperationState.PROCESSING || (idx == activePartitionIndex && !isCompleted && !isSkip && !isError && !isFinished)
-
-                                    val bgColor = when {
-                                        isCompleted -> ThemedColorSchemeKeyTokens.PrimaryContainer.value.copy(alpha = 0.65f)
-                                        isActive -> ThemedColorSchemeKeyTokens.Primary.value
-                                        isError -> ThemedColorSchemeKeyTokens.ErrorContainer.value.copy(alpha = 0.7f)
-                                        isSkip -> ThemedColorSchemeKeyTokens.SurfaceContainerHighest.value.copy(alpha = 0.35f)
-                                        else -> ThemedColorSchemeKeyTokens.SurfaceContainerHighest.value.copy(alpha = 0.5f)
-                                    }
-                                    val contentColor = when {
-                                        isCompleted -> ThemedColorSchemeKeyTokens.OnPrimaryContainer.value
-                                        isActive -> ThemedColorSchemeKeyTokens.OnPrimary.value
-                                        isError -> ThemedColorSchemeKeyTokens.OnErrorContainer.value
-                                        isSkip -> ThemedColorSchemeKeyTokens.OnSurfaceVariant.value.copy(alpha = 0.55f)
-                                        else -> ThemedColorSchemeKeyTokens.OnSurfaceVariant.value.copy(alpha = 0.75f)
-                                    }
-
-                                    val rawTitle = part.title
-                                        .replace(Regex("^(Backup|Restore)\\s*", RegexOption.IGNORE_CASE), "")
-                                        .trim()
-
-                                    val displayTitle = when (rawTitle.uppercase()) {
-                                        "APK" -> "App"
-                                        "USER" -> "Data"
-                                        "USER_DE" -> "Encrypted"
-                                        "DATA" -> "Storage"
-                                        "OBB" -> "Assets"
-                                        "MEDIA" -> "Media"
-                                        else -> rawTitle
-                                    }
-
-                                    val sizeText = if (part.bytes > 0) part.bytes.toDouble().formatSize() else ""
-
-                                    val pct = when {
-                                        part.content.endsWith("%") -> part.content
-                                        part.progress > 0f -> "${(part.progress * 100).toInt()}%"
-                                        streamProgress > 0f -> "${(streamProgress * 100).toInt()}%"
-                                        else -> "${(animatedStreamProgress.value * 100).toInt().coerceAtLeast(1)}%"
-                                    }
-
-                                    Surface(
-                                        modifier = Modifier.weight(1f),
-                                        shape = RoundedCornerShape(SizeTokens.Level10),
-                                        color = bgColor,
-                                        border = if (isActive) BorderStroke(1.2.dp, ThemedColorSchemeKeyTokens.Primary.value) else null
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    // Part 1: Icon + Name
+                                    Row(
+                                        modifier = Modifier.weight(1.3f),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
-                                        Column(
-                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 7.dp),
-                                            horizontalAlignment = Alignment.CenterHorizontally,
-                                            verticalArrangement = Arrangement.Center
+                                        Icon(
+                                            painter = painterResource(id = iconRes),
+                                            contentDescription = null,
+                                            modifier = Modifier.size(18.dp),
+                                            tint = when {
+                                                isCompleted -> Color(0xFF2E7D32)
+                                                isActive -> Color(0xFF0288D1)
+                                                isError -> ThemedColorSchemeKeyTokens.Error.value
+                                                else -> ThemedColorSchemeKeyTokens.OnSurfaceVariant.value
+                                            }
+                                        )
+                                        Text(
+                                            text = displayTitle,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = ThemedColorSchemeKeyTokens.OnSurface.value,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
+
+                                    // Part 2: Size
+                                    Box(
+                                        modifier = Modifier.weight(1.0f),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = sizeText,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = if (sizeText != "--") ThemedColorSchemeKeyTokens.OnSurface.value else ThemedColorSchemeKeyTokens.OnSurfaceVariant.value.copy(alpha = 0.6f)
+                                        )
+                                    }
+
+                                    // Part 3: Done / Processing (Status Chip)
+                                    Box(
+                                        modifier = Modifier.weight(1.3f),
+                                        contentAlignment = Alignment.CenterEnd
+                                    ) {
+                                        Surface(
+                                            shape = CircleShape,
+                                            color = when {
+                                                isCompleted -> Color(0xFF4CAF50).copy(alpha = 0.15f)
+                                                isActive -> Color(0xFF38BDF8).copy(alpha = 0.22f)
+                                                isError -> ThemedColorSchemeKeyTokens.ErrorContainer.value.copy(alpha = 0.6f)
+                                                isSkip -> ThemedColorSchemeKeyTokens.SurfaceContainerHighest.value.copy(alpha = 0.4f)
+                                                else -> ThemedColorSchemeKeyTokens.SurfaceContainerHighest.value.copy(alpha = 0.5f)
+                                            },
+                                            border = BorderStroke(
+                                                1.dp,
+                                                when {
+                                                    isCompleted -> Color(0xFF4CAF50).copy(alpha = 0.5f)
+                                                    isActive -> Color(0xFF38BDF8).copy(alpha = 0.7f)
+                                                    isError -> ThemedColorSchemeKeyTokens.Error.value.copy(alpha = 0.5f)
+                                                    else -> ThemedColorSchemeKeyTokens.OutlineVariant.value.copy(alpha = 0.3f)
+                                                }
+                                            )
                                         ) {
                                             Row(
+                                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 3.dp),
                                                 verticalAlignment = Alignment.CenterVertically,
                                                 horizontalArrangement = Arrangement.spacedBy(4.dp)
                                             ) {
@@ -411,50 +482,32 @@ fun ProcessingTelemetryHud(
                                                     },
                                                     fontSize = 10.sp,
                                                     fontWeight = FontWeight.Bold,
-                                                    color = contentColor
+                                                    color = when {
+                                                        isCompleted -> Color(0xFF2E7D32)
+                                                        isActive -> Color(0xFF0288D1)
+                                                        isError -> ThemedColorSchemeKeyTokens.Error.value
+                                                        else -> ThemedColorSchemeKeyTokens.OnSurfaceVariant.value
+                                                    }
                                                 )
                                                 Text(
-                                                    text = displayTitle,
+                                                    text = when {
+                                                        isCompleted -> "Done"
+                                                        isActive -> if (pct.isNotEmpty() && pct != "0%") pct else "Processing"
+                                                        isSkip -> "Skipped"
+                                                        isError -> "Failed"
+                                                        else -> "Queued"
+                                                    },
                                                     fontSize = 10.sp,
                                                     fontWeight = FontWeight.Bold,
-                                                    color = contentColor,
-                                                    maxLines = 1,
-                                                    overflow = TextOverflow.Ellipsis
-                                                )
-                                            }
-
-                                            Spacer(modifier = Modifier.height(2.dp))
-
-                                            Text(
-                                                text = when {
-                                                    isCompleted -> "Done"
-                                                    isActive -> pct
-                                                    isSkip -> "Skipped"
-                                                    isError -> "Failed"
-                                                    else -> "Queued"
-                                                },
-                                                fontSize = 9.sp,
-                                                fontWeight = FontWeight.SemiBold,
-                                                color = contentColor.copy(alpha = 0.95f),
-                                                maxLines = 1
-                                            )
-
-                                            if (sizeText.isNotEmpty()) {
-                                                Text(
-                                                    text = sizeText,
-                                                    fontSize = 8.sp,
-                                                    fontWeight = FontWeight.Normal,
-                                                    color = contentColor.copy(alpha = 0.8f),
-                                                    maxLines = 1
+                                                    color = when {
+                                                        isCompleted -> Color(0xFF2E7D32)
+                                                        isActive -> Color(0xFF0288D1)
+                                                        isError -> ThemedColorSchemeKeyTokens.Error.value
+                                                        else -> ThemedColorSchemeKeyTokens.OnSurfaceVariant.value
+                                                    }
                                                 )
                                             }
                                         }
-                                    }
-                                }
-
-                                if (rowPartitions.size < columns) {
-                                    repeat(columns - rowPartitions.size) {
-                                        Spacer(modifier = Modifier.weight(1f))
                                     }
                                 }
                             }

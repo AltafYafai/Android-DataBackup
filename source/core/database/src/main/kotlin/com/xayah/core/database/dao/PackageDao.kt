@@ -61,7 +61,7 @@ interface PackageDao {
     )
     suspend fun queryPkgEntitiesByUserId(opType: OpType, userId: Int): List<PackageEntity>
 
-    @Query("SELECT * FROM PackageEntity WHERE indexInfo_opType = :opType AND extraInfo_firstUpdated = :firstUpdated")
+    @Query("SELECT * FROM PackageEntity WHERE indexInfo_opType = :opType AND (extraInfo_firstUpdated = :firstUpdated OR (displayStats_apkBytes = 0 AND displayStats_userBytes = 0 AND displayStats_userDeBytes = 0 AND displayStats_dataBytes = 0 AND displayStats_obbBytes = 0 AND displayStats_mediaBytes = 0))")
     suspend fun queryFirstUpdatedApps(opType: OpType, firstUpdated: Boolean): List<PackageEntity>
 
     @Query(

@@ -18,6 +18,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -25,8 +26,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.xayah.core.common.util.BuildConfigUtil
+import com.xayah.core.data.repository.UpdateState
 import com.xayah.core.datastore.KeyAutoScreenOff
 import com.xayah.core.datastore.KeyMonet
+import com.xayah.core.ui.component.AppUpdateDialog
 import com.xayah.core.ui.component.Clickable
 import com.xayah.core.ui.component.InnerBottomSpacer
 import com.xayah.core.ui.component.Switchable
@@ -34,10 +38,12 @@ import com.xayah.core.ui.component.Title
 import com.xayah.core.ui.route.MainRoutes
 import com.xayah.core.ui.token.SizeTokens
 import com.xayah.core.ui.util.LocalNavController
+import com.xayah.core.ui.viewmodel.IndexUiEffect
 import com.xayah.core.util.LanguageUtil
 import com.xayah.core.util.getActivity
 import com.xayah.core.util.navigateSingle
 import com.xayah.core.util.readMappedLanguage
+import kotlinx.coroutines.launch
 import com.xayah.feature.setup.MainActivity as SetupActivity
 
 @ExperimentalLayoutApi
@@ -49,10 +55,50 @@ fun PageSettings() {
     val navController = LocalNavController.current!!
     val viewModel = hiltViewModel<IndexViewModel>()
     val directoryState by viewModel.directoryState.collectAsStateWithLifecycle()
+    val updateState by viewModel.updateRepo.updateState.collectAsStateWithLifecycle()
+    val scope = rememberCoroutineScope()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
+
+    when (val state = updateState) {
+        is UpdateState.Available -> {
+            AppUpdateDialog(
+                isOpen = true,
+                versionName = state.updateInfo.versionName,
+                changelog = state.updateInfo.changelog,
+                sizeBytes = state.updateInfo.sizeBytes,
+                sizeText = state.updateInfo.sizeText,
+                isDownloading = false,
+                onDownloadClick = {
+                    scope.launch {
+                        viewModel.updateRepo.downloadAndInstall(state.updateInfo)
+                    }
+                },
+                onLaterClick = {
+                    viewModel.updateRepo.dismissUpdate()
+                }
+            )
+        }
+        is UpdateState.Downloading -> {
+            AppUpdateDialog(
+                isOpen = true,
+                versionName = state.updateInfo.versionName,
+                changelog = state.updateInfo.changelog,
+                sizeBytes = state.updateInfo.sizeBytes,
+                sizeText = state.updateInfo.sizeText,
+                isDownloading = true,
+                downloadProgress = state.progress,
+                downloadedBytes = state.downloadedBytes,
+                totalBytes = state.totalBytes,
+                onDownloadClick = {},
+                onLaterClick = {}
+            )
+        }
+        else -> {}
+    }
 
     SettingsScaffold(
         scrollBehavior = scrollBehavior,
+        snackbarHostState = viewModel.snackbarHostState,
         title = stringResource(id = R.string.settings),
         actions = {}
     ) {
@@ -135,6 +181,19 @@ fun PageSettings() {
                     value = stringResource(id = R.string.about_app),
                 ) {
                     navController.navigateSingle(MainRoutes.About.route)
+                }
+                Clickable(
+                    icon = ImageVector.vectorResource(id = R.drawable.ic_rounded_acute),
+                    title = "Check for Updates",
+                    value = "Current version: ${BuildConfigUtil.VERSION_NAME}",
+                ) {
+                    scope.launch {
+                        viewModel.emitEffect(IndexUiEffect.ShowSnackbar(message = "Checking for updates..."))
+                        val info = viewModel.updateRepo.checkForUpdate(isManual = true)
+                        if (info == null && viewModel.updateRepo.updateState.value is UpdateState.Idle) {
+                            viewModel.emitEffect(IndexUiEffect.ShowSnackbar(message = "You're already using the latest version! (${BuildConfigUtil.VERSION_NAME})"))
+                        }
+                    }
                 }
             }
             Spacer(modifier = Modifier.height(SizeTokens.Level64 + SizeTokens.Level32))

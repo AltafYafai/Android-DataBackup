@@ -108,11 +108,11 @@ class PackageRepository @Inject constructor(
 
     private fun sortByDataSizeNew(type: SortType): Comparator<PackageEntity> = when (type) {
         SortType.ASCENDING -> {
-            compareBy { p -> p.storageStatsBytes }
+            compareBy { p -> if (p.displayStatsBytes > 0) p.displayStatsBytes else p.storageStatsBytes }
         }
 
         SortType.DESCENDING -> {
-            compareByDescending { p -> p.storageStatsBytes }
+            compareByDescending { p -> if (p.displayStatsBytes > 0) p.displayStatsBytes else p.storageStatsBytes }
         }
     }
 

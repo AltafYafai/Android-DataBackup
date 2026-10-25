@@ -2,6 +2,7 @@ package com.xayah.feature.main.settings
 
 import androidx.compose.material3.ExperimentalMaterial3Api
 import com.xayah.core.data.repository.DirectoryRepository
+import com.xayah.core.data.repository.UpdateRepo
 import com.xayah.core.model.database.DirectoryEntity
 import com.xayah.core.ui.viewmodel.BaseViewModel
 import com.xayah.core.ui.viewmodel.IndexUiEffect
@@ -20,6 +21,7 @@ sealed class IndexUiIntent : UiIntent
 @HiltViewModel
 class IndexViewModel @Inject constructor(
     directoryRepo: DirectoryRepository,
+    val updateRepo: UpdateRepo,
 ) : BaseViewModel<IndexUiState, IndexUiIntent, IndexUiEffect>(IndexUiState) {
     override suspend fun onEvent(state: IndexUiState, intent: IndexUiIntent) {}
 

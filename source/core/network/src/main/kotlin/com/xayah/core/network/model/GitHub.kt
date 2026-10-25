@@ -7,6 +7,7 @@ import com.google.gson.annotations.SerializedName
  */
 data class Release(
     @SerializedName("html_url") val url: String = "",
+    @SerializedName("tag_name") val tagName: String = "",
     @SerializedName("name") val name: String = "",
     @SerializedName("assets") val assets: List<Asset> = listOf(),
     @SerializedName("body") val body: String = "",
@@ -18,5 +19,7 @@ data class Release(
  * GitHub Api Asset Entity
  */
 data class Asset(
+    @SerializedName("name") val name: String = "",
+    @SerializedName("size") val size: Long = 0L,
     @SerializedName("browser_download_url") val url: String = "",
 )

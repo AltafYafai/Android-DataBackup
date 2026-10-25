@@ -54,7 +54,7 @@ class BackupViewModelImpl @Inject constructor(
                 val packages = mPkgRepo.queryActivated(OpType.BACKUP)
                 var bytes = 0.0
                 packages.forEach {
-                    bytes += it.storageStatsBytes
+                    bytes += if (it.displayStatsBytes > 0) it.displayStatsBytes else it.storageStatsBytes
                 }
                 _packages.value = packages
                 _packagesSize.value = bytes.formatSize()

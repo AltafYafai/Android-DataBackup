@@ -42,12 +42,24 @@ import com.xayah.feature.main.settings.backup.PageBackupSettings
 import com.xayah.feature.main.settings.blacklist.PageBlackList
 import com.xayah.feature.main.settings.language.PageLanguageSelector
 import com.xayah.feature.main.settings.restore.PageRestoreSettings
+import com.xayah.core.data.repository.UpdateRepo
+import com.xayah.core.data.repository.UpdateState
+import com.xayah.core.ui.component.AppUpdateDialog
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
+    @Inject
+    lateinit var updateRepo: UpdateRepo
+
     @ExperimentalCoroutinesApi
     @ExperimentalAnimationApi
     @ExperimentalFoundationApi
@@ -66,6 +78,50 @@ class MainActivity : AppCompatActivity() {
         setContent {
             DataBackupTheme {
                 val navController = rememberNavController()
+                val updateState by updateRepo.updateState.collectAsStateWithLifecycle()
+                val scope = rememberCoroutineScope()
+
+                LaunchedEffect(Unit) {
+                    updateRepo.checkForUpdate(isManual = false)
+                }
+
+                when (val state = updateState) {
+                    is UpdateState.Available -> {
+                        AppUpdateDialog(
+                            isOpen = true,
+                            versionName = state.updateInfo.versionName,
+                            changelog = state.updateInfo.changelog,
+                            sizeBytes = state.updateInfo.sizeBytes,
+                            sizeText = state.updateInfo.sizeText,
+                            isDownloading = false,
+                            onDownloadClick = {
+                                scope.launch {
+                                    updateRepo.downloadAndInstall(state.updateInfo)
+                                }
+                            },
+                            onLaterClick = {
+                                updateRepo.dismissUpdate()
+                            }
+                        )
+                    }
+                    is UpdateState.Downloading -> {
+                        AppUpdateDialog(
+                            isOpen = true,
+                            versionName = state.updateInfo.versionName,
+                            changelog = state.updateInfo.changelog,
+                            sizeBytes = state.updateInfo.sizeBytes,
+                            sizeText = state.updateInfo.sizeText,
+                            isDownloading = true,
+                            downloadProgress = state.progress,
+                            downloadedBytes = state.downloadedBytes,
+                            totalBytes = state.totalBytes,
+                            onDownloadClick = {},
+                            onLaterClick = {}
+                        )
+                    }
+                    else -> {}
+                }
+
                 CompositionLocalProvider(
                     LocalNavController provides navController,
                     androidx.lifecycle.compose.LocalLifecycleOwner provides androidx.compose.ui.platform.LocalLifecycleOwner.current,

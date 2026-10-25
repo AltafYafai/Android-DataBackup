@@ -348,7 +348,7 @@ class AppsRepo @Inject constructor(
 
     private suspend fun updateApp(pm: PackageManager, pkg: PackageEntity, userId: Int, userHandle: UserHandle?): PackageUpdateEntity? {
         val info = rootService.getPackageInfoAsUser(pkg.packageName, PackageManager.GET_PERMISSIONS, userId)
-        val updateEntity = PackageUpdateEntity(pkg.id, pkg.packageInfo, pkg.extraInfo, pkg.storageStats)
+        val updateEntity = PackageUpdateEntity(pkg.id, pkg.packageInfo, pkg.extraInfo, pkg.storageStats, pkg.displayStats)
         if (info != null) {
             runCatching {
                 val iconPath: String
@@ -395,6 +395,14 @@ class AppsRepo @Inject constructor(
                     }
                 }
             }
+            runCatching {
+                updateEntity.displayStats.apkBytes = calculateLocalAppDataSize(pkg, DataType.PACKAGE_APK)
+                updateEntity.displayStats.userBytes = calculateLocalAppDataSize(pkg, DataType.PACKAGE_USER)
+                updateEntity.displayStats.userDeBytes = calculateLocalAppDataSize(pkg, DataType.PACKAGE_USER_DE)
+                updateEntity.displayStats.dataBytes = calculateLocalAppDataSize(pkg, DataType.PACKAGE_DATA)
+                updateEntity.displayStats.obbBytes = calculateLocalAppDataSize(pkg, DataType.PACKAGE_OBB)
+                updateEntity.displayStats.mediaBytes = calculateLocalAppDataSize(pkg, DataType.PACKAGE_MEDIA)
+            }.withLog()
             return updateEntity
         } else {
             appsDao.delete(updateEntity.id)

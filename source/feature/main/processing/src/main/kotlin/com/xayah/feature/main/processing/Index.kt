@@ -86,7 +86,8 @@ fun PageProcessing(
     finishedTitleId: Int,
     finishedSubtitleId: Int,
     finishedWithErrorsSubtitleId: Int,
-    viewModel: AbstractProcessingViewModel
+    viewModel: AbstractProcessingViewModel,
+    autoStart: Boolean = false,
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -110,6 +111,9 @@ fun PageProcessing(
 
     LaunchedEffect(null) {
         viewModel.emitIntentOnIO(ProcessingUiIntent.Initialize)
+        if (autoStart) {
+            viewModel.emitIntentOnIO(ProcessingUiIntent.Process)
+        }
     }
 
     LaunchedEffect(screenOffCountDown, uiState.state) {

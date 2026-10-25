@@ -61,6 +61,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
@@ -207,23 +208,23 @@ fun ProcessingCard(
     val sizeText = if (totalBytes > 0) totalBytes.toDouble().formatSize() else ""
 
     val containerColor = when (state) {
-        OperationState.PROCESSING -> ThemedColorSchemeKeyTokens.PrimaryContainer.value.copy(alpha = 0.18f)
-        OperationState.DONE -> ThemedColorSchemeKeyTokens.SurfaceContainerLow.value
+        OperationState.PROCESSING -> Color(0xFF38BDF8).copy(alpha = 0.08f)
+        OperationState.DONE -> ThemedColorSchemeKeyTokens.SurfaceContainerLowest.value
         OperationState.ERROR -> ThemedColorSchemeKeyTokens.ErrorContainer.value.copy(alpha = 0.15f)
         else -> ThemedColorSchemeKeyTokens.SurfaceContainerLowest.value
     }
 
     val borderColor = when (state) {
-        OperationState.PROCESSING -> ThemedColorSchemeKeyTokens.Primary.value.copy(alpha = 0.7f)
-        OperationState.DONE -> ThemedColorSchemeKeyTokens.OutlineVariant.value.copy(alpha = 0.35f)
-        OperationState.ERROR -> ThemedColorSchemeKeyTokens.Error.value.copy(alpha = 0.6f)
+        OperationState.PROCESSING -> Color(0xFF38BDF8)
+        OperationState.DONE -> Color(0xFF4CAF50).copy(alpha = 0.35f)
+        OperationState.ERROR -> ThemedColorSchemeKeyTokens.Error.value.copy(alpha = 0.5f)
         else -> ThemedColorSchemeKeyTokens.OutlineVariant.value.copy(alpha = 0.2f)
     }
 
     Surface(
         modifier = modifier,
         enabled = enabled,
-        shape = RoundedCornerShape(SizeTokens.Level20),
+        shape = RoundedCornerShape(18.dp),
         color = containerColor,
         border = BorderStroke(if (state == OperationState.PROCESSING) 1.5.dp else 1.dp, borderColor),
         shadowElevation = if (state == OperationState.PROCESSING) SizeTokens.Level4 else SizeTokens.Level1,
@@ -237,21 +238,21 @@ fun ProcessingCard(
                 horizontalArrangement = Arrangement.spacedBy(SizeTokens.Level12),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Icon Container
+                // App Icon Container
                 Surface(
-                    modifier = Modifier.size(38.dp),
-                    shape = RoundedCornerShape(10.dp),
-                    color = ThemedColorSchemeKeyTokens.SurfaceContainerHighest.value.copy(alpha = 0.5f)
+                    modifier = Modifier.size(42.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    color = ThemedColorSchemeKeyTokens.SurfaceContainerHighest.value.copy(alpha = 0.6f)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         if (packageName != null) {
-                            PackageIconImage(packageName = packageName, size = 30.dp)
+                            PackageIconImage(packageName = packageName, size = 32.dp)
                         } else {
                             Icon(
                                 imageVector = Icons.Rounded.FolderOpen,
                                 contentDescription = null,
                                 tint = ThemedColorSchemeKeyTokens.Primary.value,
-                                modifier = Modifier.size(20.dp)
+                                modifier = Modifier.size(22.dp)
                             )
                         }
                     }
@@ -261,106 +262,111 @@ fun ProcessingCard(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = title,
-                        style = MaterialTheme.typography.titleSmall,
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = ThemedColorSchemeKeyTokens.OnSurface.value,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
+                    Spacer(modifier = Modifier.height(2.dp))
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         if (packageName != null) {
                             Text(
                                 text = packageName,
                                 style = MaterialTheme.typography.labelSmall,
-                                color = ThemedColorSchemeKeyTokens.OnSurfaceVariant.value.copy(alpha = 0.75f),
+                                color = ThemedColorSchemeKeyTokens.OnSurfaceVariant.value.copy(alpha = 0.7f),
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 modifier = Modifier.weight(1f, fill = false)
                             )
                         }
                         if (sizeText.isNotEmpty()) {
-                            Text(
-                                text = if (packageName != null) "• $sizeText" else sizeText,
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = ThemedColorSchemeKeyTokens.Primary.value,
-                                fontSize = 10.sp
-                            )
+                            Surface(
+                                shape = CircleShape,
+                                color = ThemedColorSchemeKeyTokens.SecondaryContainer.value.copy(alpha = 0.6f)
+                            ) {
+                                Text(
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp),
+                                    text = sizeText,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = ThemedColorSchemeKeyTokens.OnSecondaryContainer.value,
+                                    fontSize = 10.sp
+                                )
+                            }
                         }
                     }
                 }
 
-                // Status chip & counter
+                // Status chip & counter & expand icon
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(SizeTokens.Level6)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    if (state == OperationState.PROCESSING) {
-                        Surface(
-                            shape = RoundedCornerShape(SizeTokens.Level6),
-                            color = ThemedColorSchemeKeyTokens.Primary.value.copy(alpha = 0.15f),
-                            border = BorderStroke(1.dp, ThemedColorSchemeKeyTokens.Primary.value.copy(alpha = 0.45f))
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(3.dp)
+                    when (state) {
+                        OperationState.PROCESSING -> {
+                            Surface(
+                                shape = CircleShape,
+                                color = Color(0xFF38BDF8).copy(alpha = 0.18f),
+                                border = BorderStroke(1.dp, Color(0xFF38BDF8).copy(alpha = 0.6f))
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(3.dp)
+                                ) {
+                                    Text(text = "⟳", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0288D1))
+                                    Text(text = percentText, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0288D1))
+                                }
+                            }
+                        }
+                        OperationState.DONE -> {
+                            Surface(
+                                shape = CircleShape,
+                                color = Color(0xFF4CAF50).copy(alpha = 0.15f),
+                                border = BorderStroke(1.dp, Color(0xFF4CAF50).copy(alpha = 0.45f))
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(3.dp)
+                                ) {
+                                    Text(text = "✓", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2E7D32))
+                                    Text(text = "Done", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2E7D32))
+                                }
+                            }
+                        }
+                        OperationState.ERROR -> {
+                            Surface(
+                                shape = CircleShape,
+                                color = ThemedColorSchemeKeyTokens.ErrorContainer.value.copy(alpha = 0.5f),
+                                border = BorderStroke(1.dp, ThemedColorSchemeKeyTokens.Error.value.copy(alpha = 0.5f))
                             ) {
                                 Text(
-                                    text = "⟳",
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                    text = "Failed",
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = ThemedColorSchemeKeyTokens.Primary.value
-                                )
-                                Text(
-                                    text = percentText,
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = ThemedColorSchemeKeyTokens.Primary.value
+                                    color = ThemedColorSchemeKeyTokens.OnErrorContainer.value
                                 )
                             }
                         }
-                    } else if (state == OperationState.DONE) {
-                        Surface(
-                            shape = CircleShape,
-                            color = ThemedColorSchemeKeyTokens.PrimaryContainer.value.copy(alpha = 0.5f),
-                            border = BorderStroke(1.dp, ThemedColorSchemeKeyTokens.Primary.value.copy(alpha = 0.35f))
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(3.dp)
+                        else -> {
+                            Surface(
+                                shape = CircleShape,
+                                color = ThemedColorSchemeKeyTokens.SurfaceContainerHighest.value.copy(alpha = 0.6f)
                             ) {
                                 Text(
-                                    text = "✓",
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                    text = "Queued",
                                     fontSize = 10.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = ThemedColorSchemeKeyTokens.OnPrimaryContainer.value
-                                )
-                                Text(
-                                    text = "Saved",
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = ThemedColorSchemeKeyTokens.OnPrimaryContainer.value
+                                    fontWeight = FontWeight.Medium,
+                                    color = ThemedColorSchemeKeyTokens.OnSurfaceVariant.value
                                 )
                             }
-                        }
-                    } else if (state == OperationState.ERROR) {
-                        Surface(
-                            shape = CircleShape,
-                            color = ThemedColorSchemeKeyTokens.ErrorContainer.value.copy(alpha = 0.5f),
-                            border = BorderStroke(1.dp, ThemedColorSchemeKeyTokens.Error.value.copy(alpha = 0.4f))
-                        ) {
-                            Text(
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                                text = "Failed",
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = ThemedColorSchemeKeyTokens.OnErrorContainer.value
-                            )
                         }
                     }
 
@@ -368,7 +374,7 @@ fun ProcessingCard(
                         Text(
                             text = "${successCount + failedCount}/$totalCount",
                             style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Medium,
+                            fontWeight = FontWeight.SemiBold,
                             color = ThemedColorSchemeKeyTokens.OnSurfaceVariant.value.copy(alpha = 0.8f),
                             fontSize = 10.sp
                         )
@@ -383,27 +389,56 @@ fun ProcessingCard(
                 }
             }
 
-            // Live progress line under header
+            // In-line progress bar across active card
             if (state == OperationState.PROCESSING) {
-                Box(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(3.dp)
-                        .background(ThemedColorSchemeKeyTokens.SurfaceContainerHighest.value)
+                        .padding(horizontal = SizeTokens.Level16)
+                        .padding(bottom = SizeTokens.Level10)
                 ) {
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth(animatedProgress.value.coerceIn(0.02f, 1f))
-                            .fillMaxHeight()
-                            .background(
-                                Brush.horizontalGradient(
-                                    listOf(
-                                        ThemedColorSchemeKeyTokens.Primary.value,
-                                        ThemedColorSchemeKeyTokens.Secondary.value
+                            .fillMaxWidth()
+                            .height(6.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFF38BDF8).copy(alpha = 0.18f))
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(animatedProgress.value.coerceIn(0.02f, 1f))
+                                .fillMaxHeight()
+                                .clip(CircleShape)
+                                .background(
+                                    Brush.horizontalGradient(
+                                        listOf(
+                                            Color(0xFF0288D1),
+                                            Color(0xFF38BDF8)
+                                        )
                                     )
                                 )
-                            )
-                    )
+                        )
+                    }
+                    if (activeSubItem != null) {
+                        Spacer(modifier = Modifier.height(3.dp))
+                        val cleanStepName = activeSubItem.title.replace(Regex("^(Backup|Restore)\\s*", RegexOption.IGNORE_CASE), "").trim()
+                        val stepDisplay = when (cleanStepName.uppercase()) {
+                            "APK" -> "App"
+                            "USER" -> "Data"
+                            "USER_DE" -> "Encrypted"
+                            "DATA" -> "Storage"
+                            "OBB" -> "Assets"
+                            "MEDIA" -> "Media"
+                            else -> cleanStepName
+                        }
+                        Text(
+                            text = "Backing up $stepDisplay • $percentText",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Medium,
+                            color = Color(0xFF0288D1),
+                            fontSize = 10.sp
+                        )
+                    }
                 }
             }
 
@@ -412,7 +447,7 @@ fun ProcessingCard(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = SizeTokens.Level12, vertical = SizeTokens.Level8),
+                        .padding(horizontal = SizeTokens.Level16, vertical = SizeTokens.Level8),
                     verticalArrangement = Arrangement.spacedBy(SizeTokens.Level6)
                 ) {
                     items.forEachIndexed { index, item ->
@@ -425,6 +460,16 @@ fun ProcessingCard(
                             .replace(Regex("^(Backup|Restore)\\s*", RegexOption.IGNORE_CASE), "")
                             .trim()
 
+                        val iconRes = when (rawSubTitle.uppercase()) {
+                            "APK" -> R.drawable.ic_rounded_android
+                            "USER" -> R.drawable.ic_rounded_person
+                            "USER_DE" -> R.drawable.ic_rounded_manage_accounts
+                            "DATA" -> R.drawable.ic_rounded_database
+                            "OBB" -> R.drawable.ic_rounded_stadia_controller
+                            "MEDIA" -> R.drawable.ic_rounded_image
+                            else -> R.drawable.ic_rounded_package_2
+                        }
+
                         val cleanSubTitle = when (rawSubTitle.uppercase()) {
                             "APK" -> "App"
                             "USER" -> "Data"
@@ -435,7 +480,7 @@ fun ProcessingCard(
                             else -> rawSubTitle
                         }
 
-                        val subSizeText = if (item.bytes > 0) item.bytes.toDouble().formatSize() else ""
+                        val subSizeText = if (item.bytes > 0) item.bytes.toDouble().formatSize() else "--"
 
                         val subPctText = when {
                             isSubDone -> "Done"
@@ -452,103 +497,89 @@ fun ProcessingCard(
                         }
 
                         val subBgColor = when {
-                            isSubActive -> ThemedColorSchemeKeyTokens.PrimaryContainer.value.copy(alpha = 0.28f)
-                            isSubDone -> ThemedColorSchemeKeyTokens.SurfaceContainerHighest.value.copy(alpha = 0.35f)
+                            isSubActive -> Color(0xFF38BDF8).copy(alpha = 0.12f)
+                            isSubDone -> Color(0xFF4CAF50).copy(alpha = 0.08f)
                             isSubError -> ThemedColorSchemeKeyTokens.ErrorContainer.value.copy(alpha = 0.2f)
-                            else -> ThemedColorSchemeKeyTokens.SurfaceContainerHighest.value.copy(alpha = 0.2f)
-                        }
-
-                        val subContentColor = when {
-                            isSubActive -> ThemedColorSchemeKeyTokens.Primary.value
-                            isSubDone -> ThemedColorSchemeKeyTokens.OnSurface.value
-                            isSubError -> ThemedColorSchemeKeyTokens.Error.value
-                            else -> ThemedColorSchemeKeyTokens.OnSurfaceVariant.value.copy(alpha = 0.65f)
+                            else -> ThemedColorSchemeKeyTokens.SurfaceContainerHighest.value.copy(alpha = 0.25f)
                         }
 
                         Surface(
                             modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(SizeTokens.Level10),
+                            shape = RoundedCornerShape(10.dp),
                             color = subBgColor,
-                            border = if (isSubActive) BorderStroke(1.dp, ThemedColorSchemeKeyTokens.Primary.value.copy(alpha = 0.5f)) else null
+                            border = if (isSubActive) BorderStroke(1.dp, Color(0xFF38BDF8)) else null
                         ) {
-                            Column(modifier = Modifier.fillMaxWidth()) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = SizeTokens.Level12, vertical = SizeTokens.Level8),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                // Part 1: Icon + Name
                                 Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = SizeTokens.Level12, vertical = SizeTokens.Level8),
+                                    modifier = Modifier.weight(1.3f),
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(SizeTokens.Level8)
                                 ) {
-                                    Text(
-                                        text = when {
-                                            isSubDone -> "✓"
-                                            isSubActive -> "⟳"
-                                            isSubSkip -> "⊘"
-                                            isSubError -> "✕"
-                                            else -> "○"
-                                        },
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = subContentColor
+                                    Icon(
+                                        painter = painterResource(id = iconRes),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp),
+                                        tint = when {
+                                            isSubDone -> Color(0xFF2E7D32)
+                                            isSubActive -> Color(0xFF0288D1)
+                                            isSubError -> ThemedColorSchemeKeyTokens.Error.value
+                                            else -> ThemedColorSchemeKeyTokens.OnSurfaceVariant.value
+                                        }
                                     )
-
                                     Text(
-                                        modifier = Modifier.weight(1f),
                                         text = cleanSubTitle,
                                         style = MaterialTheme.typography.bodySmall,
                                         fontWeight = if (isSubActive) FontWeight.Bold else FontWeight.Medium,
-                                        color = if (isSubActive) ThemedColorSchemeKeyTokens.Primary.value else ThemedColorSchemeKeyTokens.OnSurface.value,
+                                        color = if (isSubActive) Color(0xFF0288D1) else ThemedColorSchemeKeyTokens.OnSurface.value,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis
                                     )
+                                }
 
-                                    if (subSizeText.isNotEmpty()) {
-                                        Surface(
-                                            shape = RoundedCornerShape(4.dp),
-                                            color = ThemedColorSchemeKeyTokens.SurfaceContainerHighest.value.copy(alpha = 0.5f)
-                                        ) {
-                                            Text(
-                                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
-                                                text = subSizeText,
-                                                fontSize = 9.sp,
-                                                fontWeight = FontWeight.Normal,
-                                                color = ThemedColorSchemeKeyTokens.OnSurfaceVariant.value
-                                            )
-                                        }
-                                    }
+                                // Part 2: Size
+                                Box(
+                                    modifier = Modifier.weight(1.0f),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = subSizeText,
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = ThemedColorSchemeKeyTokens.OnSurfaceVariant.value
+                                    )
+                                }
 
+                                // Part 3: Done / Processing
+                                Box(
+                                    modifier = Modifier.weight(1.3f),
+                                    contentAlignment = Alignment.CenterEnd
+                                ) {
                                     Surface(
-                                        shape = RoundedCornerShape(4.dp),
-                                        color = if (isSubActive) ThemedColorSchemeKeyTokens.Primary.value.copy(alpha = 0.15f) else ThemedColorSchemeKeyTokens.SurfaceContainerHighest.value.copy(alpha = 0.5f),
-                                        border = if (isSubActive) BorderStroke(0.5.dp, ThemedColorSchemeKeyTokens.Primary.value.copy(alpha = 0.35f)) else null
+                                        shape = CircleShape,
+                                        color = when {
+                                            isSubDone -> Color(0xFF4CAF50).copy(alpha = 0.15f)
+                                            isSubActive -> Color(0xFF38BDF8).copy(alpha = 0.22f)
+                                            isSubError -> ThemedColorSchemeKeyTokens.ErrorContainer.value.copy(alpha = 0.5f)
+                                            else -> ThemedColorSchemeKeyTokens.SurfaceContainerHighest.value.copy(alpha = 0.4f)
+                                        }
                                     ) {
                                         Text(
                                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                                             text = subPctText,
                                             fontSize = 9.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = if (isSubActive) ThemedColorSchemeKeyTokens.Primary.value else subContentColor
-                                        )
-                                    }
-                                }
-
-                                if (isSubActive) {
-                                    val activeSubP = when {
-                                        item.content.endsWith("%") -> item.content.trimEnd('%').toFloatOrNull()?.let { it / 100f } ?: 0.05f
-                                        item.progress > 0f -> item.progress
-                                        else -> 0.05f
-                                    }
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(2.dp)
-                                            .background(ThemedColorSchemeKeyTokens.SurfaceContainerHighest.value)
-                                    ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxWidth(activeSubP.coerceIn(0.02f, 1f))
-                                                .fillMaxHeight()
-                                                .background(ThemedColorSchemeKeyTokens.Primary.value)
+                                            color = when {
+                                                isSubDone -> Color(0xFF2E7D32)
+                                                isSubActive -> Color(0xFF0288D1)
+                                                isSubError -> ThemedColorSchemeKeyTokens.Error.value
+                                                else -> ThemedColorSchemeKeyTokens.OnSurfaceVariant.value
+                                            }
                                         )
                                     }
                                 }

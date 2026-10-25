@@ -74,6 +74,9 @@ abstract class AbstractProcessingViewModel(
             }
 
             is ProcessingUiIntent.Process -> {
+                if (_taskId.value == -1L) {
+                    _taskId.value = if (uiState.value.storageType == StorageMode.Cloud) mCloudService.initialize() else mLocalService.initialize()
+                }
                 emitState(state.copy(state = OperationState.PROCESSING))
                 if (state.storageType == StorageMode.Cloud) {
                     // Cloud

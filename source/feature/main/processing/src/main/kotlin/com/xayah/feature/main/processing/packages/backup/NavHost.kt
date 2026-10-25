@@ -27,7 +27,7 @@ fun PackagesBackupProcessingGraph() {
 
     AnimatedNavHost(
         navController = localNavController,
-        startDestination = MainRoutes.PackagesBackupProcessingSetup.route,
+        startDestination = MainRoutes.PackagesBackupProcessing.route,
     ) {
         composable(MainRoutes.PackagesBackupProcessing.route) {
             PageProcessing(
@@ -41,7 +41,8 @@ fun PackagesBackupProcessingGraph() {
                 finishedTitleId = R.string.backup_completed,
                 finishedSubtitleId = R.string.args_apps_backed_up,
                 finishedWithErrorsSubtitleId = R.string.args_apps_backed_up_and_failed,
-                viewModel = viewModel
+                viewModel = viewModel,
+                autoStart = true
             )
         }
         composable(MainRoutes.PackagesBackupProcessingSetup.route) {
