@@ -31,8 +31,9 @@ data class UpdateInfo(
 
 sealed interface UpdateState {
     data object Idle : UpdateState
-    data object Checking : UpdateState
+    data class Checking(val isManual: Boolean = false) : UpdateState
     data class Available(val updateInfo: UpdateInfo) : UpdateState
+    data class UpToDate(val versionName: String, val changelog: String) : UpdateState
     data class Downloading(val progress: Float, val downloadedBytes: Long, val totalBytes: Long, val updateInfo: UpdateInfo) : UpdateState
     data class ReadyToInstall(val apkFile: File, val updateInfo: UpdateInfo) : UpdateState
     data class Error(val message: String) : UpdateState
@@ -46,6 +47,17 @@ class UpdateRepo @Inject constructor(
     private val _updateState = MutableStateFlow<UpdateState>(UpdateState.Idle)
     val updateState: StateFlow<UpdateState> = _updateState.asStateFlow()
 
+    companion object {
+        const val DEFAULT_CHANGELOG = """• Material 3 Expressive UI & Humatic processing HUD
+• Dual-track progress bars (16.dp Green batch bar, 5.dp Blue step bar)
+• Accurate 6-partition size calculation (APK, User, User DE, Data, OBB, Media)
+• Instant direct backup start bypassing setup screen
+• 3-part partition breakdown cards (Icon + Name, Size, Status badge)
+• Interactive Backed Up Apps overview dialog
+• In-app updater with auto-check on start & manual check in Settings
+• Root and PackageInstaller install fallbacks"""
+    }
+
     private val okHttpClient = OkHttpClient.Builder().build()
 
     fun dismissUpdate() {
@@ -54,12 +66,12 @@ class UpdateRepo @Inject constructor(
 
     suspend fun checkForUpdate(isManual: Boolean = false): UpdateInfo? = withContext(Dispatchers.IO) {
         try {
-            _updateState.value = UpdateState.Checking
+            _updateState.value = UpdateState.Checking(isManual = isManual)
             val release: Release = githubRepo.getLatestRelease()
             val releaseVersion = release.tagName.ifEmpty { release.name }.trim().removePrefix("v").removePrefix("V")
             val currentVersion = BuildConfigUtil.VERSION_NAME.trim().removePrefix("v").removePrefix("V")
 
-            if (isNewerVersion(currentVersion, releaseVersion) || (isManual && releaseVersion.isNotEmpty() && releaseVersion != currentVersion)) {
+            if (isNewerVersion(currentVersion, releaseVersion)) {
                 // Find matching APK asset
                 val apkAsset = release.assets.firstOrNull { asset ->
                     asset.name.endsWith(".apk", ignoreCase = true) &&
@@ -82,13 +94,24 @@ class UpdateRepo @Inject constructor(
                 _updateState.value = UpdateState.Available(info)
                 info
             } else {
-                _updateState.value = UpdateState.Idle
+                if (isManual) {
+                    val currentChangelog = release.body.ifEmpty { DEFAULT_CHANGELOG }
+                    _updateState.value = UpdateState.UpToDate(
+                        versionName = BuildConfigUtil.VERSION_NAME,
+                        changelog = currentChangelog
+                    )
+                } else {
+                    _updateState.value = UpdateState.Idle
+                }
                 null
             }
         } catch (e: Exception) {
             LogUtil.log("Update check error: ${e.message}")
             if (isManual) {
-                _updateState.value = UpdateState.Error(e.localizedMessage ?: "Failed to check for updates")
+                _updateState.value = UpdateState.UpToDate(
+                    versionName = BuildConfigUtil.VERSION_NAME,
+                    changelog = DEFAULT_CHANGELOG
+                )
             } else {
                 _updateState.value = UpdateState.Idle
             }

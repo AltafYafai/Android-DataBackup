@@ -45,6 +45,8 @@ import com.xayah.feature.main.settings.restore.PageRestoreSettings
 import com.xayah.core.data.repository.UpdateRepo
 import com.xayah.core.data.repository.UpdateState
 import com.xayah.core.ui.component.AppUpdateDialog
+import com.xayah.core.ui.component.CheckingUpdateDialog
+import com.xayah.core.ui.component.NoUpdateDialog
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
@@ -86,6 +88,14 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 when (val state = updateState) {
+                    is UpdateState.Checking -> {
+                        if (state.isManual) {
+                            CheckingUpdateDialog(
+                                isOpen = true,
+                                onDismiss = { updateRepo.dismissUpdate() }
+                            )
+                        }
+                    }
                     is UpdateState.Available -> {
                         AppUpdateDialog(
                             isOpen = true,
@@ -100,6 +110,16 @@ class MainActivity : AppCompatActivity() {
                                 }
                             },
                             onLaterClick = {
+                                updateRepo.dismissUpdate()
+                            }
+                        )
+                    }
+                    is UpdateState.UpToDate -> {
+                        NoUpdateDialog(
+                            isOpen = true,
+                            versionName = state.versionName,
+                            changelog = state.changelog,
+                            onDismiss = {
                                 updateRepo.dismissUpdate()
                             }
                         )
