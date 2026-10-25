@@ -11,11 +11,15 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -75,23 +79,31 @@ fun AppUpdateDialog(
             usePlatformDefaultWidth = false
         )
     ) {
-        Surface(
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = SizeTokens.Level24),
-            shape = RoundedCornerShape(28.dp),
-            color = ThemedColorSchemeKeyTokens.SurfaceContainerLowest.value,
-            tonalElevation = SizeTokens.Level6,
-            shadowElevation = SizeTokens.Level8,
-            border = BorderStroke(1.2.dp, ThemedColorSchemeKeyTokens.OutlineVariant.value.copy(alpha = 0.35f))
+                .fillMaxSize()
+                .navigationBarsPadding()
+                .statusBarsPadding()
+                .padding(horizontal = SizeTokens.Level20, vertical = SizeTokens.Level24),
+            contentAlignment = Alignment.Center
         ) {
-            Column(
+            Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(SizeTokens.Level24),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(SizeTokens.Level16)
+                    .wrapContentHeight(),
+                shape = RoundedCornerShape(28.dp),
+                color = ThemedColorSchemeKeyTokens.SurfaceContainerLowest.value,
+                tonalElevation = SizeTokens.Level6,
+                shadowElevation = SizeTokens.Level8,
+                border = BorderStroke(1.2.dp, ThemedColorSchemeKeyTokens.OutlineVariant.value.copy(alpha = 0.35f))
             ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(SizeTokens.Level24),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(SizeTokens.Level16)
+                ) {
                 // Header Icon & Title
                 Surface(
                     modifier = Modifier.size(56.dp),
@@ -155,7 +167,7 @@ fun AppUpdateDialog(
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(max = 200.dp),
+                        .heightIn(max = 160.dp),
                     shape = RoundedCornerShape(16.dp),
                     color = ThemedColorSchemeKeyTokens.SurfaceContainerHighest.value.copy(alpha = 0.35f),
                     border = BorderStroke(1.dp, ThemedColorSchemeKeyTokens.OutlineVariant.value.copy(alpha = 0.2f))
@@ -277,4 +289,5 @@ fun AppUpdateDialog(
             }
         }
     }
+}
 }

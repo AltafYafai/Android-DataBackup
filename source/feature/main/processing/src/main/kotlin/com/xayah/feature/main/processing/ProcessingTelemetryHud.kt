@@ -80,6 +80,7 @@ fun ProcessingTelemetryHud(
     activePartitionIndex: Int,
     // Telemetry Footer
     telemetryStats: String? = null,
+    onViewAppsClick: (() -> Unit)? = null,
 ) {
     val animatedBatchProgress = animateFloatAsState(
         targetValue = if (batchProgress.isNaN() || batchProgress < 0f) 0f else batchProgress.coerceIn(0f, 1f),
@@ -550,6 +551,27 @@ fun ProcessingTelemetryHud(
                             fontWeight = FontWeight.Medium,
                             color = ThemedColorSchemeKeyTokens.OnSurfaceVariant.value
                         )
+                    }
+                    if (onViewAppsClick != null && batchTotal > 0) {
+                        Surface(
+                            shape = CircleShape,
+                            color = ThemedColorSchemeKeyTokens.Primary.value.copy(alpha = 0.14f),
+                            border = BorderStroke(1.dp, ThemedColorSchemeKeyTokens.Primary.value.copy(alpha = 0.4f)),
+                            onClick = onViewAppsClick
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = SizeTokens.Level8, vertical = SizeTokens.Level3),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(3.dp)
+                            ) {
+                                Text(
+                                    text = "📦 Apps ($batchCurrent/$batchTotal)",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = ThemedColorSchemeKeyTokens.Primary.value
+                                )
+                            }
+                        }
                     }
                 }
 

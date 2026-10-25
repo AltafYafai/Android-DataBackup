@@ -9,6 +9,7 @@ import androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi
 import androidx.compose.animation.graphics.res.animatedVectorResource
 import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
 import androidx.compose.animation.graphics.vector.AnimatedImageVector
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -16,16 +17,27 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.FolderOpen
+import androidx.compose.material.icons.rounded.KeyboardArrowRight
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -34,7 +46,6 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,7 +61,6 @@ import com.xayah.core.ui.component.BodyLargeText
 import com.xayah.core.ui.component.HeadlineMediumText
 import com.xayah.core.ui.component.LocalSlotScope
 import com.xayah.core.ui.component.PackageIconImage
-import com.xayah.core.ui.component.ProcessingCard
 import com.xayah.core.ui.component.SegmentCircularProgressIndicator
 import com.xayah.core.ui.component.Surface
 import com.xayah.core.ui.component.confirm
@@ -99,14 +109,24 @@ fun PageProcessing(
     val dataItems by viewModel.dataItems.collectAsStateWithLifecycle()
     val navController = LocalNavController.current!!
     val dialogState = LocalSlotScope.current!!.dialogSlot
-    val progress: Float by remember(task?.processingIndex, dataItems.size) {
+    val currentIdx = task?.processingIndex
+    val activeItem = if (currentIdx != null && currentIdx in 1..dataItems.size) dataItems.getOrNull(currentIdx - 1) else null
+    val progress: Float by remember(task?.processingIndex, activeItem?.progress, dataItems.size) {
         mutableFloatStateOf(
-            if (task != null)
-                task!!.processingIndex.toFloat() / (dataItems.size + 1)
-            else
-                -1f
+            when {
+                task == null -> -1f
+                currentIdx == null || currentIdx == 0 -> 0f
+                currentIdx in 1..dataItems.size -> {
+                    val completedApps = (currentIdx - 1).toFloat()
+                    val activeAppP = (activeItem?.progress ?: 0f).coerceIn(0f, 1f)
+                    ((completedApps + activeAppP) / dataItems.size.coerceAtLeast(1)).coerceIn(0f, 1f)
+                }
+                currentIdx > dataItems.size -> 1.0f
+                else -> 0f
+            }
         )
     }
+    var showAppsDialog by remember { mutableStateOf(false) }
     val screenOffCountDown by viewModel.screenOffCountDown.collectAsStateWithLifecycle()
 
     LaunchedEffect(null) {
@@ -218,6 +238,7 @@ fun PageProcessing(
             modifier = Modifier
                 .fillMaxSize()
                 .background(ThemedColorSchemeKeyTokens.Surface.value)
+                .verticalScroll(rememberScrollState())
         ) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -327,7 +348,11 @@ fun PageProcessing(
                     packageName = activePackageName,
                     statusChipText = statusChipText,
                     statusChipColor = statusChipColor,
-                    batchCurrent = task?.processingIndex ?: 0,
+                    batchCurrent = when {
+                        isFinished -> dataItems.size
+                        currentIdx != null && currentIdx in 1..dataItems.size -> currentIdx
+                        else -> 0
+                    },
                     batchTotal = dataItems.size,
                     batchProgress = progress,
                     streamTitle = activeStreamTitle,
@@ -335,59 +360,98 @@ fun PageProcessing(
                     partitions = partitions,
                     activePartitionIndex = activePartitionIndex,
                     telemetryStats = telemetryStats,
+                    onViewAppsClick = if (dataItems.isNotEmpty()) { { showAppsDialog = true } } else null,
                 )
-            }
 
-            Surface(
-                modifier = Modifier.fillMaxSize(),
-                shape = RoundedCornerShape(topStart = SizeTokens.Level24, topEnd = SizeTokens.Level24),
-                color = ThemedColorSchemeKeyTokens.SurfaceContainerLowest.value,
-                shadowElevation = SizeTokens.Level2
-            ) {
-                val lazyListState = rememberLazyListState()
-
-                LaunchedEffect(task) {
-                    if (task != null) {
-                        runCatching {
-                            lazyListState.animateScrollToItem((task!!.processingIndex - 1))
-                        }
-                    }
-                }
-
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    state = lazyListState,
-                    verticalArrangement = Arrangement.spacedBy(SizeTokens.Level12)
-                ) {
-                    item {
-                        Spacer(modifier = Modifier.size(SizeTokens.Level12))
-                    }
-                    items(count = dataItems.size) {
-                        var expanded by rememberSaveable(task, it) { mutableStateOf((task?.processingIndex?.minus(1) ?: -1) == it) }
-                        val item = dataItems.getOrNull(it)
-                        if (item != null) {
-                            ProcessingCard(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .paddingHorizontal(SizeTokens.Level24),
-                                title = item.title,
-                                state = item.state,
-                                packageName = item.key,
-                                expanded = expanded,
-                                items = item.items,
-                                processingIndex = item.processingIndex,
-                                progress = item.progress,
-                                onActionBarClick = {
-                                    expanded = expanded.not()
+                if (dataItems.isNotEmpty()) {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .paddingHorizontal(SizeTokens.Level16)
+                            .paddingVertical(SizeTokens.Level6),
+                        shape = RoundedCornerShape(SizeTokens.Level16),
+                        color = ThemedColorSchemeKeyTokens.SurfaceContainerHighest.value.copy(alpha = 0.5f),
+                        border = BorderStroke(1.dp, ThemedColorSchemeKeyTokens.OutlineVariant.value.copy(alpha = 0.25f)),
+                        onClick = { showAppsDialog = true }
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .paddingHorizontal(SizeTokens.Level16)
+                                .paddingVertical(SizeTokens.Level12),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(SizeTokens.Level12),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Surface(
+                                    modifier = Modifier.size(38.dp),
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = ThemedColorSchemeKeyTokens.Primary.value.copy(alpha = 0.12f)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.FolderOpen,
+                                            contentDescription = null,
+                                            tint = ThemedColorSchemeKeyTokens.Primary.value,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
                                 }
-                            )
+                                Column {
+                                    Text(
+                                        text = "Backed Up Apps",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = ThemedColorSchemeKeyTokens.OnSurface.value
+                                    )
+                                    val doneCount = dataItems.count { it.state == OperationState.DONE }
+                                    Text(
+                                        text = "$doneCount of ${dataItems.size} completed • Tap to inspect",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = ThemedColorSchemeKeyTokens.OnSurfaceVariant.value
+                                    )
+                                }
+                            }
+
+                            Surface(
+                                shape = CircleShape,
+                                color = ThemedColorSchemeKeyTokens.Primary.value.copy(alpha = 0.12f),
+                                border = BorderStroke(1.dp, ThemedColorSchemeKeyTokens.Primary.value.copy(alpha = 0.35f))
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Text(
+                                        text = "View",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = ThemedColorSchemeKeyTokens.Primary.value
+                                    )
+                                    Icon(
+                                        imageVector = Icons.Rounded.KeyboardArrowRight,
+                                        contentDescription = null,
+                                        tint = ThemedColorSchemeKeyTokens.Primary.value,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                }
+                            }
                         }
                     }
-                    item {
-                        Spacer(modifier = Modifier.size(SizeTokens.Level12 + it))
-                    }
                 }
+
+                Spacer(modifier = Modifier.height(SizeTokens.Level20))
             }
         }
     }
+
+    BackedUpAppsDialog(
+        isOpen = showAppsDialog,
+        dataItems = dataItems,
+        onDismiss = { showAppsDialog = false }
+    )
 }
