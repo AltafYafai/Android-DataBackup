@@ -221,100 +221,113 @@ fun PageProcessing(
             ) {
                 var title: String by remember { mutableStateOf("") }
                 var subtitle: String by remember { mutableStateOf("") }
-                var segments: Int by remember { mutableIntStateOf(0) }
+                var activePackageName: String? by remember { mutableStateOf(null) }
+                var activeStreamTitle: String by remember { mutableStateOf("") }
+                var partitions: List<com.xayah.core.ui.model.ProcessingCardItem> by remember { mutableStateOf(emptyList()) }
+                var activePartitionIndex: Int by remember { mutableIntStateOf(0) }
+                var telemetryStats: String? by remember { mutableStateOf(null) }
+                var isFinished: Boolean by remember { mutableStateOf(false) }
+                var statusChipText: String by remember { mutableStateOf("IDLE") }
                 var segmentProgress: Float by remember { mutableFloatStateOf(0f) }
-                val animatedImageVector = AnimatedImageVector.animatedVectorResource(com.xayah.core.ui.R.drawable.ic_animated_tick)
-                var atEnd by remember { mutableStateOf(false) }
 
-                AnimatedContent(modifier = Modifier.fillMaxWidth(), targetState = task?.processingIndex, label = AnimationTokens.AnimatedContentLabel) {
-                    Box(
-                        modifier = Modifier
-                            .paddingTop(SizeTokens.Level24)
-                            .paddingBottom(SizeTokens.Level16),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (it != null) {
-                            when (it) {
-                                0 -> {
-                                    // Preprocessing
-                                    title = stringResource(id = R.string.preprocessing)
-                                    subtitle = preItems.getOrNull(task?.preprocessingIndex ?: -1)?.title ?: ""
-                                    segments = preItems.size
-                                    segmentProgress = preItemsProgress
-                                }
+                val currentIdx = task?.processingIndex
+                if (currentIdx != null) {
+                    when (currentIdx) {
+                        0 -> {
+                            // Preprocessing
+                            title = stringResource(id = R.string.preprocessing)
+                            val currentPre = preItems.getOrNull(task?.preprocessingIndex ?: -1)
+                            subtitle = currentPre?.title ?: ""
+                            activePackageName = null
+                            activeStreamTitle = currentPre?.title ?: ""
+                            segmentProgress = preItemsProgress
+                            partitions = preItems
+                            activePartitionIndex = task?.preprocessingIndex ?: 0
+                            telemetryStats = currentPre?.content?.ifEmpty { null }
+                            isFinished = false
+                            statusChipText = "PREPARING"
+                        }
 
-                                dataItems.size + 1 -> {
-                                    // Post-processing
-                                    title = stringResource(id = R.string.post_processing)
-                                    subtitle = postItems.getOrNull(task?.postProcessingIndex ?: -1)?.title ?: ""
-                                    segments = postItems.size
-                                    segmentProgress = postItemsProgress
-                                }
+                        dataItems.size + 1 -> {
+                            // Post-processing
+                            title = stringResource(id = R.string.post_processing)
+                            val currentPost = postItems.getOrNull(task?.postProcessingIndex ?: -1)
+                            subtitle = currentPost?.title ?: ""
+                            activePackageName = null
+                            activeStreamTitle = currentPost?.title ?: ""
+                            segmentProgress = postItemsProgress
+                            partitions = postItems
+                            activePartitionIndex = task?.postProcessingIndex ?: 0
+                            telemetryStats = currentPost?.content?.ifEmpty { null }
+                            isFinished = false
+                            statusChipText = "CLEANING"
+                        }
 
-                                dataItems.size + 2 -> {
-                                    // Finished
-                                    title = stringResource(id = finishedTitleId)
-                                    subtitle = if (task != null) {
-                                        if (task!!.totalCount == task!!.successCount) {
-                                            remember { context.getString(finishedSubtitleId, task!!.totalCount) }
-                                        } else {
-                                            remember { context.getString(finishedWithErrorsSubtitleId, task!!.successCount, task!!.failureCount) }
-                                        }
-                                    } else {
-                                        remember { context.getString(finishedSubtitleId, dataItems.size) }
-                                    }
+                        dataItems.size + 2 -> {
+                            // Finished
+                            title = stringResource(id = finishedTitleId)
+                            subtitle = if (task != null) {
+                                if (task!!.totalCount == task!!.successCount) {
+                                    context.getString(finishedSubtitleId, task!!.totalCount)
+                                } else {
+                                    context.getString(finishedWithErrorsSubtitleId, task!!.successCount, task!!.failureCount)
                                 }
-
-                                else -> {
-                                    // Processing
-                                    val item = dataItems.getOrNull(it - 1)
-                                    if (item != null) {
-                                        val index = item.processingIndex
-                                        title = item.title
-                                        subtitle = item.items.getOrNull(index)?.let { it.title + if (it.content.isEmpty()) "" else " (${it.content})" } ?: stringResource(id = R.string.necessary_remaining_data_processing)
-                                        segments = item.items.size
-                                        segmentProgress = item.progress
-                                    }
-                                }
+                            } else {
+                                context.getString(finishedSubtitleId, dataItems.size)
                             }
+                            activePackageName = null
+                            activeStreamTitle = "COMPLETE"
+                            segmentProgress = 1.0f
+                            partitions = emptyList()
+                            activePartitionIndex = 0
+                            telemetryStats = "All operations finalized"
+                            isFinished = true
+                            statusChipText = "SEALED"
+                        }
 
-                            when (it) {
-                                dataItems.size + 2 -> {
-                                    // Finished
-                                    LaunchedEffect(animatedImageVector) {
-                                        atEnd = true
-                                    }
-                                    Image(
-                                        painter = rememberAnimatedVectorPainter(animatedImageVector, atEnd),
-                                        contentDescription = null,
-                                        modifier = Modifier.size(SizeTokens.Level152),
-                                    )
-                                }
-
-                                else -> {
-                                    // Processing, Pre-processing, Post-processing
-                                    PackageIconImage(
-                                        icon = if (it > 0 && it < dataItems.size + 1) null else ImageVector.vectorResource(id = com.xayah.core.ui.R.drawable.ic_rounded_hourglass_empty),
-                                        packageName = dataItems.getOrNull(it - 1)?.key ?: "",
-                                        inCircleShape = true,
-                                        size = SizeTokens.Level128
-                                    )
-
-                                    SegmentCircularProgressIndicator(
-                                        size = SizeTokens.Level152,
-                                        segments = segments,
-                                        progress = segmentProgress
-                                    )
-                                }
+                        else -> {
+                            // Processing
+                            val item = dataItems.getOrNull(currentIdx - 1)
+                            if (item != null) {
+                                val index = item.processingIndex
+                                val activeSub = item.items.getOrNull(index)
+                                title = item.title
+                                activePackageName = item.key
+                                activeStreamTitle = activeSub?.title ?: ""
+                                subtitle = activeSub?.let { it.title + if (it.content.isEmpty()) "" else " (${it.content})" }
+                                    ?: stringResource(id = R.string.necessary_remaining_data_processing)
+                                segmentProgress = item.progress
+                                partitions = item.items
+                                activePartitionIndex = index
+                                telemetryStats = activeSub?.content?.ifEmpty { null } ?: item.key
+                                isFinished = false
+                                statusChipText = "STREAMING"
                             }
                         }
                     }
                 }
-                HeadlineMediumText(text = title)
-                BodyLargeText(
-                    modifier = Modifier
-                        .paddingTop(SizeTokens.Level4)
-                        .paddingBottom(SizeTokens.Level24), text = subtitle, color = ThemedColorSchemeKeyTokens.OnSurfaceVariant.value
+
+                val statusChipColor = when {
+                    isFinished || statusChipText == "STREAMING" -> ThemedColorSchemeKeyTokens.Primary.value
+                    statusChipText == "PREPARING" || statusChipText == "CLEANING" -> ThemedColorSchemeKeyTokens.Secondary.value
+                    else -> ThemedColorSchemeKeyTokens.Outline.value
+                }
+
+                ProcessingTelemetryHud(
+                    isFinished = isFinished,
+                    title = title,
+                    subtitle = subtitle,
+                    packageName = activePackageName,
+                    statusChipText = statusChipText,
+                    statusChipColor = statusChipColor,
+                    batchCurrent = task?.processingIndex ?: 0,
+                    batchTotal = dataItems.size,
+                    batchProgress = progress,
+                    streamTitle = activeStreamTitle,
+                    streamProgress = segmentProgress,
+                    partitions = partitions,
+                    activePartitionIndex = activePartitionIndex,
+                    telemetryStats = telemetryStats,
                 )
             }
 

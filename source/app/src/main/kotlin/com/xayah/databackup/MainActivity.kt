@@ -136,11 +136,14 @@ class MainActivity : AppCompatActivity() {
                             }
                         }
 
-                        // Floating Frosted Glass Bottom Navigation Bar
-                        BackupVaultBottomBar(
-                            navController = navController,
-                            modifier = Modifier.align(Alignment.BottomCenter)
-                        )
+                        // Floating Frosted Glass Bottom Navigation Bar permanently anchored to bottom
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .align(Alignment.BottomCenter)
+                        ) {
+                            BackupVaultBottomBar(navController = navController)
+                        }
                     }
                 }
             }

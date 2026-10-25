@@ -4,6 +4,8 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.BorderStroke
@@ -79,100 +81,104 @@ fun BackupVaultBottomBar(
 
     val isVisible = selectedId != null
 
-    AnimatedVisibility(
-        visible = isVisible,
-        modifier = modifier,
-        enter = slideInVertically(initialOffsetY = { it }, animationSpec = tween(300, easing = FastOutSlowInEasing)),
-        exit = slideOutVertically(targetOffsetY = { it }, animationSpec = tween(250, easing = FastOutSlowInEasing)),
+    Box(
+        modifier = modifier.fillMaxWidth(),
+        contentAlignment = Alignment.BottomCenter
     ) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = SizeTokens.Level12, vertical = SizeTokens.Level8)
-                .navigationBarsPadding(),
-            shape = RoundedCornerShape(SizeTokens.Level24),
-            color = ThemedColorSchemeKeyTokens.SurfaceContainerLowest.value.copy(alpha = 0.88f),
-            tonalElevation = SizeTokens.Level8,
-            shadowElevation = SizeTokens.Level8,
-            border = BorderStroke(Dp(1.2f), ThemedColorSchemeKeyTokens.OutlineVariant.value.copy(alpha = 0.35f)),
+        AnimatedVisibility(
+            visible = isVisible,
+            enter = slideInVertically(initialOffsetY = { it }, animationSpec = tween(300, easing = FastOutSlowInEasing)) + fadeIn(animationSpec = tween(300)),
+            exit = slideOutVertically(targetOffsetY = { it }, animationSpec = tween(250, easing = FastOutSlowInEasing)) + fadeOut(animationSpec = tween(250)),
         ) {
-            Row(
+            Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(64.dp)
-                    .padding(horizontal = SizeTokens.Level4),
-                horizontalArrangement = Arrangement.SpaceAround,
-                verticalAlignment = Alignment.CenterVertically,
+                    .padding(horizontal = SizeTokens.Level12, vertical = SizeTokens.Level8)
+                    .navigationBarsPadding(),
+                shape = RoundedCornerShape(SizeTokens.Level24),
+                color = ThemedColorSchemeKeyTokens.SurfaceContainerLowest.value.copy(alpha = 0.88f),
+                tonalElevation = SizeTokens.Level8,
+                shadowElevation = SizeTokens.Level8,
+                border = BorderStroke(Dp(1.2f), ThemedColorSchemeKeyTokens.OutlineVariant.value.copy(alpha = 0.35f)),
             ) {
-                val tabs = remember {
-                    listOf(
-                        NavTabItem("dashboard", "Dashboard", R.drawable.ic_rounded_home, MainRoutes.Dashboard.route),
-                        NavTabItem("apps", "Apps", R.drawable.ic_rounded_package_2, MainRoutes.List.getRoute(Target.Apps, OpType.BACKUP)),
-                        NavTabItem("files", "Files", R.drawable.ic_rounded_folder_open, MainRoutes.List.getRoute(Target.Files, OpType.BACKUP)),
-                        NavTabItem("restore", "Restore", R.drawable.ic_rounded_history, MainRoutes.Restore.route),
-                        NavTabItem("history", "History", R.drawable.ic_rounded_list_alt, MainRoutes.History.route),
-                        NavTabItem("settings", "Settings", 0, MainRoutes.Settings.route),
-                    )
-                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(64.dp)
+                        .padding(horizontal = SizeTokens.Level4),
+                    horizontalArrangement = Arrangement.SpaceAround,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    val tabs = remember {
+                        listOf(
+                            NavTabItem("dashboard", "Dashboard", R.drawable.ic_rounded_home, MainRoutes.Dashboard.route),
+                            NavTabItem("apps", "Apps", R.drawable.ic_rounded_package_2, MainRoutes.List.getRoute(Target.Apps, OpType.BACKUP)),
+                            NavTabItem("files", "Files", R.drawable.ic_rounded_folder_open, MainRoutes.List.getRoute(Target.Files, OpType.BACKUP)),
+                            NavTabItem("restore", "Restore", R.drawable.ic_rounded_history, MainRoutes.Restore.route),
+                            NavTabItem("history", "History", R.drawable.ic_rounded_list_alt, MainRoutes.History.route),
+                            NavTabItem("settings", "Settings", 0, MainRoutes.Settings.route),
+                        )
+                    }
 
-                tabs.forEach { tab ->
-                    val isSelected = tab.id == selectedId
-                    val tint by animateColorAsState(
-                        targetValue = if (isSelected) ThemedColorSchemeKeyTokens.Primary.value else ThemedColorSchemeKeyTokens.OnSurfaceVariant.value,
-                        animationSpec = tween(200),
-                        label = "tab_tint"
-                    )
-                    val iconBg by animateColorAsState(
-                        targetValue = if (isSelected) ThemedColorSchemeKeyTokens.PrimaryContainer.value else Color.Transparent,
-                        animationSpec = tween(200),
-                        label = "tab_bg"
-                    )
+                    tabs.forEach { tab ->
+                        val isSelected = tab.id == selectedId
+                        val tint by animateColorAsState(
+                            targetValue = if (isSelected) ThemedColorSchemeKeyTokens.Primary.value else ThemedColorSchemeKeyTokens.OnSurfaceVariant.value,
+                            animationSpec = tween(200),
+                            label = "tab_tint"
+                        )
+                        val iconBg by animateColorAsState(
+                            targetValue = if (isSelected) ThemedColorSchemeKeyTokens.PrimaryContainer.value else Color.Transparent,
+                            animationSpec = tween(200),
+                            label = "tab_bg"
+                        )
 
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
-                            ) {
-                                if (!isSelected) {
-                                    navController.navigateSingle(tab.route)
-                                }
-                            },
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center,
-                    ) {
-                        Surface(
-                            modifier = Modifier.size(width = 44.dp, height = 28.dp),
-                            shape = CircleShape,
-                            color = iconBg,
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null,
+                                ) {
+                                    if (!isSelected) {
+                                        navController.navigateSingle(tab.route)
+                                    }
+                                },
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center,
                         ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                if (tab.id == "settings") {
-                                    Icon(
-                                        modifier = Modifier.size(20.dp),
-                                        imageVector = Icons.Outlined.Settings,
-                                        tint = if (isSelected) ThemedColorSchemeKeyTokens.OnPrimaryContainer.value else tint,
-                                        contentDescription = tab.title,
-                                    )
-                                } else {
-                                    Icon(
-                                        modifier = Modifier.size(20.dp),
-                                        imageVector = ImageVector.vectorResource(id = tab.iconRes),
-                                        tint = if (isSelected) ThemedColorSchemeKeyTokens.OnPrimaryContainer.value else tint,
-                                        contentDescription = tab.title,
-                                    )
+                            Surface(
+                                modifier = Modifier.size(width = 44.dp, height = 28.dp),
+                                shape = CircleShape,
+                                color = iconBg,
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    if (tab.id == "settings") {
+                                        Icon(
+                                            modifier = Modifier.size(20.dp),
+                                            imageVector = Icons.Outlined.Settings,
+                                            tint = if (isSelected) ThemedColorSchemeKeyTokens.OnPrimaryContainer.value else tint,
+                                            contentDescription = tab.title,
+                                        )
+                                    } else {
+                                        Icon(
+                                            modifier = Modifier.size(20.dp),
+                                            imageVector = ImageVector.vectorResource(id = tab.iconRes),
+                                            tint = if (isSelected) ThemedColorSchemeKeyTokens.OnPrimaryContainer.value else tint,
+                                            contentDescription = tab.title,
+                                        )
+                                    }
                                 }
                             }
-                        }
 
-                        Text(
-                            text = tab.title,
-                            fontSize = 10.sp,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                            color = tint,
-                            maxLines = 1,
-                        )
+                            Text(
+                                text = tab.title,
+                                fontSize = 10.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                color = tint,
+                                maxLines = 1,
+                            )
+                        }
                     }
                 }
             }
