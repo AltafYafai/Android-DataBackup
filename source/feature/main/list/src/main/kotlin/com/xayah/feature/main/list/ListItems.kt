@@ -25,6 +25,7 @@ import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TooltipBox
@@ -38,7 +39,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.xayah.core.model.OpType
@@ -99,6 +102,7 @@ fun LazyListScope.listItems(
                         preserveId = item.preserveId,
                         flag = item.selectionFlag,
                         selected = item.selected,
+                        sizeText = item.sizeText,
                         onClick = {
                             navController.navigateSingle(MainRoutes.Details.getRoute(Target.Apps, uiState.opType, item.id))
                         },
@@ -142,6 +146,7 @@ fun AppItem(
     preserveId: Long,
     flag: Int,
     selected: Boolean,
+    sizeText: String = "",
     onChangeFlag: (Long, Int) -> Unit,
     onSelectedChanged: (Long, Boolean) -> Unit,
     onClick: () -> Unit,
@@ -150,12 +155,12 @@ fun AppItem(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = SizeTokens.Level12, vertical = SizeTokens.Level4),
-        shape = RoundedCornerShape(SizeTokens.Level16),
+        shape = RoundedCornerShape(SizeTokens.Level20),
         color = if (selected) ThemedColorSchemeKeyTokens.SurfaceContainerHighest.value else ThemedColorSchemeKeyTokens.SurfaceContainerLowest.value,
-        tonalElevation = if (selected) SizeTokens.Level2 else SizeTokens.Level1,
+        tonalElevation = if (selected) SizeTokens.Level3 else SizeTokens.Level1,
         border = BorderStroke(
-            Dp(1f),
-            if (selected) ThemedColorSchemeKeyTokens.Primary.value.copy(alpha = 0.5f)
+            Dp(1.2f),
+            if (selected) ThemedColorSchemeKeyTokens.Primary.value.copy(alpha = 0.55f)
             else ThemedColorSchemeKeyTokens.OutlineVariant.value.copy(alpha = 0.35f)
         ),
         onClick = onClick
@@ -166,13 +171,39 @@ fun AppItem(
                 .height(IntrinsicSize.Min)
                 .padding(horizontal = SizeTokens.Level16, vertical = SizeTokens.Level12),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(SizeTokens.Level16)
+            horizontalArrangement = Arrangement.spacedBy(SizeTokens.Level14)
         ) {
             PackageIconImage(packageName = packageName, size = SizeTokens.Level40)
 
             Column(modifier = Modifier.weight(1f)) {
                 TitleLargeText(text = label.ifEmpty { stringResource(id = R.string.unknown) }, maxLines = 1)
-                BodyMediumText(text = packageName, color = ThemedColorSchemeKeyTokens.Outline.value, maxLines = 1)
+                Spacer(modifier = Modifier.height(SizeTokens.Level2))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(SizeTokens.Level6)
+                ) {
+                    if (sizeText.isNotEmpty()) {
+                        Surface(
+                            shape = RoundedCornerShape(SizeTokens.Level6),
+                            color = ThemedColorSchemeKeyTokens.SecondaryContainer.value.copy(alpha = 0.75f),
+                        ) {
+                            Text(
+                                text = sizeText,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = ThemedColorSchemeKeyTokens.OnSecondaryContainer.value,
+                                modifier = Modifier.padding(horizontal = SizeTokens.Level6, vertical = Dp(2f)),
+                                fontSize = 10.sp
+                            )
+                        }
+                    }
+                    BodyMediumText(
+                        text = packageName,
+                        color = ThemedColorSchemeKeyTokens.Outline.value,
+                        maxLines = 1,
+                        modifier = Modifier.weight(1f, fill = false)
+                    )
+                }
             }
 
             Row(modifier = Modifier.height(IntrinsicSize.Min), verticalAlignment = Alignment.CenterVertically) {
@@ -214,12 +245,12 @@ fun FileItem(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = SizeTokens.Level12, vertical = SizeTokens.Level4),
-        shape = RoundedCornerShape(SizeTokens.Level16),
+        shape = RoundedCornerShape(SizeTokens.Level20),
         color = if (selected) ThemedColorSchemeKeyTokens.SurfaceContainerHighest.value else ThemedColorSchemeKeyTokens.SurfaceContainerLowest.value,
-        tonalElevation = if (selected) SizeTokens.Level2 else SizeTokens.Level1,
+        tonalElevation = if (selected) SizeTokens.Level3 else SizeTokens.Level1,
         border = BorderStroke(
-            Dp(1f),
-            if (selected) ThemedColorSchemeKeyTokens.Primary.value.copy(alpha = 0.5f)
+            Dp(1.2f),
+            if (selected) ThemedColorSchemeKeyTokens.Primary.value.copy(alpha = 0.55f)
             else ThemedColorSchemeKeyTokens.OutlineVariant.value.copy(alpha = 0.35f)
         ),
         onClick = onClick

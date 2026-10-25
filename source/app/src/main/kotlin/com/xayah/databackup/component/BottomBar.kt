@@ -74,7 +74,6 @@ fun BackupVaultBottomBar(
         currentRoute.startsWith("main_list") && currentTarget == Target.Apps.name && currentOpType == OpType.BACKUP.name -> "apps"
         currentRoute.startsWith("main_list") && currentTarget == Target.Files.name && currentOpType == OpType.BACKUP.name -> "files"
         currentRoute == MainRoutes.Restore.route || currentRoute.startsWith(MainRoutes.Restore.route) -> "restore"
-        currentRoute == MainRoutes.History.route || currentRoute.startsWith(MainRoutes.History.route) -> "history"
         currentRoute == MainRoutes.Settings.route || currentRoute.startsWith(MainRoutes.Settings.route) -> "settings"
         else -> null
     }
@@ -93,11 +92,11 @@ fun BackupVaultBottomBar(
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = SizeTokens.Level12, vertical = SizeTokens.Level8)
+                    .padding(horizontal = SizeTokens.Level16, vertical = SizeTokens.Level8)
                     .navigationBarsPadding(),
-                shape = RoundedCornerShape(SizeTokens.Level24),
-                color = ThemedColorSchemeKeyTokens.SurfaceContainerLowest.value.copy(alpha = 0.88f),
-                tonalElevation = SizeTokens.Level8,
+                shape = RoundedCornerShape(SizeTokens.Level28),
+                color = ThemedColorSchemeKeyTokens.SurfaceContainerLowest.value.copy(alpha = 0.90f),
+                tonalElevation = SizeTokens.Level6,
                 shadowElevation = SizeTokens.Level8,
                 border = BorderStroke(Dp(1.2f), ThemedColorSchemeKeyTokens.OutlineVariant.value.copy(alpha = 0.35f)),
             ) {
@@ -105,7 +104,7 @@ fun BackupVaultBottomBar(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(64.dp)
-                        .padding(horizontal = SizeTokens.Level4),
+                        .padding(horizontal = SizeTokens.Level6),
                     horizontalArrangement = Arrangement.SpaceAround,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -115,7 +114,6 @@ fun BackupVaultBottomBar(
                             NavTabItem("apps", "Apps", R.drawable.ic_rounded_package_2, MainRoutes.List.getRoute(Target.Apps, OpType.BACKUP)),
                             NavTabItem("files", "Files", R.drawable.ic_rounded_folder_open, MainRoutes.List.getRoute(Target.Files, OpType.BACKUP)),
                             NavTabItem("restore", "Restore", R.drawable.ic_rounded_history, MainRoutes.Restore.route),
-                            NavTabItem("history", "History", R.drawable.ic_rounded_list_alt, MainRoutes.History.route),
                             NavTabItem("settings", "Settings", 0, MainRoutes.Settings.route),
                         )
                     }
@@ -124,12 +122,12 @@ fun BackupVaultBottomBar(
                         val isSelected = tab.id == selectedId
                         val tint by animateColorAsState(
                             targetValue = if (isSelected) ThemedColorSchemeKeyTokens.Primary.value else ThemedColorSchemeKeyTokens.OnSurfaceVariant.value,
-                            animationSpec = tween(200),
+                            animationSpec = tween(220, easing = FastOutSlowInEasing),
                             label = "tab_tint"
                         )
                         val iconBg by animateColorAsState(
                             targetValue = if (isSelected) ThemedColorSchemeKeyTokens.PrimaryContainer.value else Color.Transparent,
-                            animationSpec = tween(200),
+                            animationSpec = tween(220, easing = FastOutSlowInEasing),
                             label = "tab_bg"
                         )
 
@@ -148,7 +146,7 @@ fun BackupVaultBottomBar(
                             verticalArrangement = Arrangement.Center,
                         ) {
                             Surface(
-                                modifier = Modifier.size(width = 44.dp, height = 28.dp),
+                                modifier = Modifier.size(width = 52.dp, height = 30.dp),
                                 shape = CircleShape,
                                 color = iconBg,
                             ) {
@@ -171,9 +169,11 @@ fun BackupVaultBottomBar(
                                 }
                             }
 
+                            Spacer(modifier = Modifier.height(2.dp))
+
                             Text(
                                 text = tab.title,
-                                fontSize = 10.sp,
+                                fontSize = 11.sp,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                 color = tint,
                                 maxLines = 1,

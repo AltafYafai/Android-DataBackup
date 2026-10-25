@@ -107,6 +107,7 @@ fun DataBackupTheme(
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Typography,
+        shapes = ExpressiveShapes,
         content = {
             CompositionLocalProvider(
                 LocalThemedColorScheme provides themedColorScheme,

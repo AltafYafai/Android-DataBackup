@@ -198,8 +198,8 @@ fun ProcessingCard(
             val pct = (animatedProgress.value * 100).toInt().coerceAtLeast(1)
             "$pct%"
         }
-        state == OperationState.ERROR -> "ERR"
-        else -> "WAIT"
+        state == OperationState.ERROR -> "Failed"
+        else -> "Queued"
     }
 
     val totalBytes = items.sumOf { it.bytes }
@@ -222,7 +222,7 @@ fun ProcessingCard(
     Surface(
         modifier = modifier,
         enabled = enabled,
-        shape = RoundedCornerShape(SizeTokens.Level16),
+        shape = RoundedCornerShape(SizeTokens.Level20),
         color = containerColor,
         border = BorderStroke(if (state == OperationState.PROCESSING) 1.5.dp else 1.dp, borderColor),
         shadowElevation = if (state == OperationState.PROCESSING) SizeTokens.Level4 else SizeTokens.Level1,
@@ -324,12 +324,12 @@ fun ProcessingCard(
                         }
                     } else if (state == OperationState.DONE) {
                         Surface(
-                            shape = RoundedCornerShape(SizeTokens.Level6),
+                            shape = CircleShape,
                             color = ThemedColorSchemeKeyTokens.PrimaryContainer.value.copy(alpha = 0.5f),
                             border = BorderStroke(1.dp, ThemedColorSchemeKeyTokens.Primary.value.copy(alpha = 0.35f))
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(3.dp)
                             ) {
@@ -340,8 +340,8 @@ fun ProcessingCard(
                                     color = ThemedColorSchemeKeyTokens.OnPrimaryContainer.value
                                 )
                                 Text(
-                                    text = "DONE",
-                                    fontSize = 9.sp,
+                                    text = "Saved",
+                                    fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = ThemedColorSchemeKeyTokens.OnPrimaryContainer.value
                                 )
@@ -349,14 +349,14 @@ fun ProcessingCard(
                         }
                     } else if (state == OperationState.ERROR) {
                         Surface(
-                            shape = RoundedCornerShape(SizeTokens.Level6),
+                            shape = CircleShape,
                             color = ThemedColorSchemeKeyTokens.ErrorContainer.value.copy(alpha = 0.5f),
                             border = BorderStroke(1.dp, ThemedColorSchemeKeyTokens.Error.value.copy(alpha = 0.4f))
                         ) {
                             Text(
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
-                                text = "ERROR",
-                                fontSize = 9.sp,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                text = "Failed",
+                                fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = ThemedColorSchemeKeyTokens.OnErrorContainer.value
                             )
@@ -420,25 +420,34 @@ fun ProcessingCard(
                         val isSubSkip = item.state == OperationState.SKIP
                         val isSubError = item.state == OperationState.ERROR
 
-                        val cleanSubTitle = item.title
+                        val rawSubTitle = item.title
                             .replace(Regex("^(Backup|Restore)\\s*", RegexOption.IGNORE_CASE), "")
                             .trim()
-                            .uppercase()
+
+                        val cleanSubTitle = when (rawSubTitle.uppercase()) {
+                            "APK" -> "App"
+                            "USER" -> "Data"
+                            "USER_DE" -> "Encrypted"
+                            "DATA" -> "Storage"
+                            "OBB" -> "Assets"
+                            "MEDIA" -> "Media"
+                            else -> rawSubTitle
+                        }
 
                         val subSizeText = if (item.bytes > 0) item.bytes.toDouble().formatSize() else ""
 
                         val subPctText = when {
-                            isSubDone -> "100%"
+                            isSubDone -> "Done"
                             isSubActive -> {
                                 when {
                                     item.content.endsWith("%") -> item.content
                                     item.progress > 0f -> "${(item.progress * 100).toInt()}%"
-                                    else -> "ACTIVE"
+                                    else -> "Saving..."
                                 }
                             }
-                            isSubSkip -> "SKIP"
-                            isSubError -> "ERROR"
-                            else -> "WAIT"
+                            isSubSkip -> "Skipped"
+                            isSubError -> "Failed"
+                            else -> "Queued"
                         }
 
                         val subBgColor = when {
@@ -457,7 +466,7 @@ fun ProcessingCard(
 
                         Surface(
                             modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(SizeTokens.Level8),
+                            shape = RoundedCornerShape(SizeTokens.Level10),
                             color = subBgColor,
                             border = if (isSubActive) BorderStroke(1.dp, ThemedColorSchemeKeyTokens.Primary.value.copy(alpha = 0.5f)) else null
                         ) {

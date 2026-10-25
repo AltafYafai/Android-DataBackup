@@ -227,7 +227,7 @@ fun PageProcessing(
                 var activePartitionIndex: Int by remember { mutableIntStateOf(0) }
                 var telemetryStats: String? by remember { mutableStateOf(null) }
                 var isFinished: Boolean by remember { mutableStateOf(false) }
-                var statusChipText: String by remember { mutableStateOf("IDLE") }
+                var statusChipText: String by remember { mutableStateOf("Ready") }
                 var segmentProgress: Float by remember { mutableFloatStateOf(0f) }
 
                 val currentIdx = task?.processingIndex
@@ -245,7 +245,7 @@ fun PageProcessing(
                             activePartitionIndex = task?.preprocessingIndex ?: 0
                             telemetryStats = currentPre?.content?.ifEmpty { null }
                             isFinished = false
-                            statusChipText = "PREPARING"
+                            statusChipText = "Preparing..."
                         }
 
                         dataItems.size + 1 -> {
@@ -260,7 +260,7 @@ fun PageProcessing(
                             activePartitionIndex = task?.postProcessingIndex ?: 0
                             telemetryStats = currentPost?.content?.ifEmpty { null }
                             isFinished = false
-                            statusChipText = "CLEANING"
+                            statusChipText = "Wrapping up..."
                         }
 
                         dataItems.size + 2 -> {
@@ -276,13 +276,13 @@ fun PageProcessing(
                                 context.getString(finishedSubtitleId, dataItems.size)
                             }
                             activePackageName = null
-                            activeStreamTitle = "COMPLETE"
+                            activeStreamTitle = "Completed"
                             segmentProgress = 1.0f
                             partitions = emptyList()
                             activePartitionIndex = 0
-                            telemetryStats = "All operations finalized"
+                            telemetryStats = "All items safely backed up"
                             isFinished = true
-                            statusChipText = "SEALED"
+                            statusChipText = "All Done! 🎉"
                         }
 
                         else -> {
@@ -304,15 +304,15 @@ fun PageProcessing(
                                 activePartitionIndex = index
                                 telemetryStats = activeSub?.content?.ifEmpty { null } ?: item.key
                                 isFinished = false
-                                statusChipText = "STREAMING"
+                                statusChipText = "In Progress"
                             }
                         }
                     }
                 }
 
                 val statusChipColor = when {
-                    isFinished || statusChipText == "STREAMING" -> ThemedColorSchemeKeyTokens.Primary.value
-                    statusChipText == "PREPARING" || statusChipText == "CLEANING" -> ThemedColorSchemeKeyTokens.Secondary.value
+                    isFinished || statusChipText == "In Progress" -> ThemedColorSchemeKeyTokens.Primary.value
+                    statusChipText.contains("Preparing") || statusChipText.contains("Wrapping") -> ThemedColorSchemeKeyTokens.Secondary.value
                     else -> ThemedColorSchemeKeyTokens.Outline.value
                 }
 

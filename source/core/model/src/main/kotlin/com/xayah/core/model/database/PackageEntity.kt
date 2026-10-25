@@ -269,15 +269,20 @@ data class PackageEntity(
 }
 
 
-fun PackageEntity.asExternalModel() = App(
-    id = id,
-    packageName = packageName,
-    label = packageInfo.label,
-    preserveId = preserveId,
-    isSystemApp = isSystemApp,
-    selectionFlag = selectionFlag,
-    selected = extraInfo.activated
-)
+fun PackageEntity.asExternalModel(): App {
+    val bytes = if (storageStatsBytes > 0) storageStatsBytes else displayStatsBytes
+    return App(
+        id = id,
+        packageName = packageName,
+        label = packageInfo.label,
+        preserveId = preserveId,
+        isSystemApp = isSystemApp,
+        selectionFlag = selectionFlag,
+        selected = extraInfo.activated,
+        sizeText = if (bytes > 0) bytes.formatSize() else "",
+        sizeBytes = bytes,
+    )
+}
 
 // Part update entity
 data class PackageDataStatesEntity(

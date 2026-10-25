@@ -109,17 +109,17 @@ fun ProcessingTelemetryHud(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = SizeTokens.Level16, vertical = SizeTokens.Level8),
-        shape = RoundedCornerShape(SizeTokens.Level20),
+        shape = RoundedCornerShape(SizeTokens.Level24),
         color = ThemedColorSchemeKeyTokens.SurfaceContainerLowest.value,
-        tonalElevation = SizeTokens.Level2,
+        tonalElevation = SizeTokens.Level3,
         shadowElevation = SizeTokens.Level4,
-        border = BorderStroke(1.dp, ThemedColorSchemeKeyTokens.OutlineVariant.value.copy(alpha = 0.35f)),
+        border = BorderStroke(1.2.dp, ThemedColorSchemeKeyTokens.OutlineVariant.value.copy(alpha = 0.35f)),
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(SizeTokens.Level16),
-            verticalArrangement = Arrangement.spacedBy(SizeTokens.Level12)
+            verticalArrangement = Arrangement.spacedBy(SizeTokens.Level14)
         ) {
             // 1. Header Row: Icon + Title/Subtitle + Status Chip
             Row(
@@ -133,8 +133,8 @@ fun ProcessingTelemetryHud(
                     }
                     Surface(
                         modifier = Modifier.size(SizeTokens.Level48),
-                        shape = RoundedCornerShape(SizeTokens.Level12),
-                        color = ThemedColorSchemeKeyTokens.PrimaryContainer.value.copy(alpha = 0.5f),
+                        shape = RoundedCornerShape(SizeTokens.Level16),
+                        color = ThemedColorSchemeKeyTokens.PrimaryContainer.value.copy(alpha = 0.6f),
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Image(
@@ -147,8 +147,8 @@ fun ProcessingTelemetryHud(
                 } else {
                     Surface(
                         modifier = Modifier.size(SizeTokens.Level48),
-                        shape = RoundedCornerShape(SizeTokens.Level12),
-                        color = ThemedColorSchemeKeyTokens.SurfaceContainerHighest.value.copy(alpha = 0.5f),
+                        shape = RoundedCornerShape(SizeTokens.Level16),
+                        color = ThemedColorSchemeKeyTokens.SurfaceContainerHighest.value.copy(alpha = 0.6f),
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             PackageIconImage(
@@ -184,21 +184,21 @@ fun ProcessingTelemetryHud(
                     }
                 }
 
-                // Status Chip
+                // Status Chip (Humatic & Expressive Pill)
                 Surface(
                     shape = CircleShape,
                     color = statusChipColor.copy(alpha = 0.15f),
                     border = BorderStroke(1.dp, statusChipColor.copy(alpha = 0.45f)),
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = SizeTokens.Level8, vertical = SizeTokens.Level4),
+                        modifier = Modifier.padding(horizontal = SizeTokens.Level10, vertical = SizeTokens.Level6),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(SizeTokens.Level4)
+                        horizontalArrangement = Arrangement.spacedBy(SizeTokens.Level6)
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(6.dp)
-                                .alpha(if (!isFinished && statusChipText == "STREAMING") pulseAlpha else 1f)
+                                .size(7.dp)
+                                .alpha(if (!isFinished && (statusChipText.contains("Progress") || statusChipText.contains("..."))) pulseAlpha else 1f)
                                 .background(statusChipColor, CircleShape)
                         )
                         Text(
@@ -206,14 +206,13 @@ fun ProcessingTelemetryHud(
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
                             color = statusChipColor,
-                            fontSize = 9.sp,
-                            letterSpacing = 0.5.sp
+                            fontSize = 11.sp
                         )
                     }
                 }
             }
 
-            // 2. Track 1: Overall Batch Rail (Style 4)
+            // 2. Track 1: Overall Progress (Humatic)
             Column(modifier = Modifier.fillMaxWidth()) {
                 val batchClamped = batchCurrent.coerceIn(0, batchTotal.coerceAtLeast(1))
                 val batchPercent = if (batchTotal > 0) ((batchProgress.coerceIn(0f, 1f)) * 100).toInt() else 0
@@ -223,76 +222,77 @@ fun ProcessingTelemetryHud(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "OVERALL BATCH",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
+                        text = "Total Progress",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
                         color = ThemedColorSchemeKeyTokens.OnSurfaceVariant.value,
-                        fontSize = 9.sp,
-                        letterSpacing = 0.8.sp
+                        fontSize = 11.sp
                     )
                     Text(
-                        text = "$batchClamped / $batchTotal ($batchPercent%)",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.SemiBold,
+                        text = if (isFinished) "All $batchTotal completed" else "$batchClamped of $batchTotal ($batchPercent%)",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
                         color = ThemedColorSchemeKeyTokens.Primary.value,
-                        fontSize = 10.sp
+                        fontSize = 11.sp
                     )
                 }
-                Spacer(modifier = Modifier.height(SizeTokens.Level4))
+                Spacer(modifier = Modifier.height(SizeTokens.Level6))
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(6.dp)
-                        .clip(RoundedCornerShape(3.dp))
+                        .height(8.dp)
+                        .clip(CircleShape)
                         .background(ThemedColorSchemeKeyTokens.SurfaceContainerHighest.value)
                 ) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth(animatedBatchProgress.value.coerceIn(0f, 1f))
                             .fillMaxHeight()
-                            .clip(RoundedCornerShape(3.dp))
-                            .background(ThemedColorSchemeKeyTokens.Primary.value.copy(alpha = 0.85f))
+                            .clip(CircleShape)
+                            .background(ThemedColorSchemeKeyTokens.Primary.value.copy(alpha = 0.9f))
                     )
                 }
             }
 
-            // 3. Track 2: Active Stream / Partition Rail (Style 4)
+            // 3. Track 2: Current Task (Humatic)
             Column(modifier = Modifier.fillMaxWidth()) {
                 val streamPercent = (animatedStreamProgress.value * 100).toInt().coerceIn(0, 100)
+                val cleanStreamTitle = streamTitle
+                    .replace(Regex("^(Backup|Restore)\\s*", RegexOption.IGNORE_CASE), "")
+                    .trim()
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "ACTIVE STREAM",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
+                        text = "Current Step",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
                         color = ThemedColorSchemeKeyTokens.OnSurfaceVariant.value,
-                        fontSize = 9.sp,
-                        letterSpacing = 0.8.sp
+                        fontSize = 11.sp
                     )
                     Text(
-                        text = if (streamTitle.isNotEmpty()) "$streamTitle • $streamPercent%" else "$streamPercent%",
-                        style = MaterialTheme.typography.labelSmall,
+                        text = if (cleanStreamTitle.isNotEmpty()) "$cleanStreamTitle • $streamPercent%" else "$streamPercent%",
+                        style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,
                         color = ThemedColorSchemeKeyTokens.Primary.value,
-                        fontSize = 10.sp
+                        fontSize = 11.sp
                     )
                 }
-                Spacer(modifier = Modifier.height(SizeTokens.Level4))
+                Spacer(modifier = Modifier.height(SizeTokens.Level6))
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(10.dp)
-                        .clip(RoundedCornerShape(5.dp))
+                        .clip(CircleShape)
                         .background(ThemedColorSchemeKeyTokens.SurfaceContainerHighest.value)
                 ) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth(animatedStreamProgress.value.coerceIn(0f, 1f))
                             .fillMaxHeight()
-                            .clip(RoundedCornerShape(5.dp))
+                            .clip(CircleShape)
                             .background(
                                 Brush.horizontalGradient(
                                     listOf(
@@ -305,7 +305,7 @@ fun ProcessingTelemetryHud(
                 }
             }
 
-            // 4. Style 3 Partition Pipeline: 3x2 Segmented Grid Cells (APK, USER, USER_DE, DATA, OBB, MEDIA)
+            // 4. Data Breakdown Grid Cells (Humatic & Expressive)
             if (partitions.isNotEmpty()) {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Row(
@@ -314,22 +314,22 @@ fun ProcessingTelemetryHud(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "PARTITION PIPELINE",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
+                            text = "Data Breakdown",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold,
                             color = ThemedColorSchemeKeyTokens.OnSurfaceVariant.value,
-                            fontSize = 9.sp,
-                            letterSpacing = 0.8.sp
+                            fontSize = 11.sp
                         )
+                        val completedCount = partitions.count { it.state == OperationState.DONE || it.state == OperationState.SKIP }
                         Text(
-                            text = "${partitions.count { it.state == OperationState.DONE || it.state == OperationState.SKIP }}/${partitions.size}",
+                            text = "$completedCount of ${partitions.size} completed",
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.SemiBold,
                             color = ThemedColorSchemeKeyTokens.Primary.value,
-                            fontSize = 9.sp
+                            fontSize = 10.sp
                         )
                     }
-                    Spacer(modifier = Modifier.height(SizeTokens.Level6))
+                    Spacer(modifier = Modifier.height(SizeTokens.Level8))
 
                     val columns = if (partitions.size <= 2) partitions.size else 3
                     Column(
@@ -359,14 +359,23 @@ fun ProcessingTelemetryHud(
                                         isCompleted -> ThemedColorSchemeKeyTokens.OnPrimaryContainer.value
                                         isActive -> ThemedColorSchemeKeyTokens.OnPrimary.value
                                         isError -> ThemedColorSchemeKeyTokens.OnErrorContainer.value
-                                        isSkip -> ThemedColorSchemeKeyTokens.OnSurfaceVariant.value.copy(alpha = 0.5f)
-                                        else -> ThemedColorSchemeKeyTokens.OnSurfaceVariant.value.copy(alpha = 0.7f)
+                                        isSkip -> ThemedColorSchemeKeyTokens.OnSurfaceVariant.value.copy(alpha = 0.55f)
+                                        else -> ThemedColorSchemeKeyTokens.OnSurfaceVariant.value.copy(alpha = 0.75f)
                                     }
 
-                                    val displayTitle = part.title
+                                    val rawTitle = part.title
                                         .replace(Regex("^(Backup|Restore)\\s*", RegexOption.IGNORE_CASE), "")
                                         .trim()
-                                        .uppercase()
+
+                                    val displayTitle = when (rawTitle.uppercase()) {
+                                        "APK" -> "App"
+                                        "USER" -> "Data"
+                                        "USER_DE" -> "Encrypted"
+                                        "DATA" -> "Storage"
+                                        "OBB" -> "Assets"
+                                        "MEDIA" -> "Media"
+                                        else -> rawTitle
+                                    }
 
                                     val sizeText = if (part.bytes > 0) part.bytes.toDouble().formatSize() else ""
 
@@ -379,18 +388,18 @@ fun ProcessingTelemetryHud(
 
                                     Surface(
                                         modifier = Modifier.weight(1f),
-                                        shape = RoundedCornerShape(SizeTokens.Level8),
+                                        shape = RoundedCornerShape(SizeTokens.Level10),
                                         color = bgColor,
-                                        border = if (isActive) BorderStroke(1.dp, ThemedColorSchemeKeyTokens.Primary.value) else null
+                                        border = if (isActive) BorderStroke(1.2.dp, ThemedColorSchemeKeyTokens.Primary.value) else null
                                     ) {
                                         Column(
-                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 6.dp),
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 7.dp),
                                             horizontalAlignment = Alignment.CenterHorizontally,
                                             verticalArrangement = Arrangement.Center
                                         ) {
                                             Row(
                                                 verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.spacedBy(3.dp)
+                                                horizontalArrangement = Arrangement.spacedBy(4.dp)
                                             ) {
                                                 Text(
                                                     text = when {
@@ -400,13 +409,13 @@ fun ProcessingTelemetryHud(
                                                         isError -> "✕"
                                                         else -> "○"
                                                     },
-                                                    fontSize = 9.sp,
+                                                    fontSize = 10.sp,
                                                     fontWeight = FontWeight.Bold,
                                                     color = contentColor
                                                 )
                                                 Text(
                                                     text = displayTitle,
-                                                    fontSize = 9.sp,
+                                                    fontSize = 10.sp,
                                                     fontWeight = FontWeight.Bold,
                                                     color = contentColor,
                                                     maxLines = 1,
@@ -418,13 +427,13 @@ fun ProcessingTelemetryHud(
 
                                             Text(
                                                 text = when {
-                                                    isCompleted -> "100%"
+                                                    isCompleted -> "Done"
                                                     isActive -> pct
-                                                    isSkip -> "SKIP"
-                                                    isError -> "ERROR"
-                                                    else -> "WAIT"
+                                                    isSkip -> "Skipped"
+                                                    isError -> "Failed"
+                                                    else -> "Queued"
                                                 },
-                                                fontSize = 8.5.sp,
+                                                fontSize = 9.sp,
                                                 fontWeight = FontWeight.SemiBold,
                                                 color = contentColor.copy(alpha = 0.95f),
                                                 maxLines = 1
@@ -433,7 +442,7 @@ fun ProcessingTelemetryHud(
                                             if (sizeText.isNotEmpty()) {
                                                 Text(
                                                     text = sizeText,
-                                                    fontSize = 7.5.sp,
+                                                    fontSize = 8.sp,
                                                     fontWeight = FontWeight.Normal,
                                                     color = contentColor.copy(alpha = 0.8f),
                                                     maxLines = 1
@@ -454,7 +463,7 @@ fun ProcessingTelemetryHud(
                 }
             }
 
-            // 5. Telemetry Footer: Encryption, Root I/O, Sub-item stats
+            // 5. Reassurance Footer (Humatic & Expressive)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -465,26 +474,26 @@ fun ProcessingTelemetryHud(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Surface(
-                        shape = RoundedCornerShape(SizeTokens.Level4),
+                        shape = CircleShape,
                         color = ThemedColorSchemeKeyTokens.SurfaceContainerHighest.value.copy(alpha = 0.7f),
                     ) {
                         Text(
-                            modifier = Modifier.padding(horizontal = SizeTokens.Level6, vertical = SizeTokens.Level2),
-                            text = "🔒 AES-GCM",
-                            fontSize = 9.sp,
+                            modifier = Modifier.padding(horizontal = SizeTokens.Level8, vertical = SizeTokens.Level3),
+                            text = "🔒 Encrypted",
+                            fontSize = 10.sp,
                             fontWeight = FontWeight.Medium,
                             color = ThemedColorSchemeKeyTokens.OnSurfaceVariant.value
                         )
                     }
 
                     Surface(
-                        shape = RoundedCornerShape(SizeTokens.Level4),
+                        shape = CircleShape,
                         color = ThemedColorSchemeKeyTokens.SurfaceContainerHighest.value.copy(alpha = 0.7f),
                     ) {
                         Text(
-                            modifier = Modifier.padding(horizontal = SizeTokens.Level6, vertical = SizeTokens.Level2),
-                            text = "⚡ ROOT I/O",
-                            fontSize = 9.sp,
+                            modifier = Modifier.padding(horizontal = SizeTokens.Level8, vertical = SizeTokens.Level3),
+                            text = "⚡ Direct I/O",
+                            fontSize = 10.sp,
                             fontWeight = FontWeight.Medium,
                             color = ThemedColorSchemeKeyTokens.OnSurfaceVariant.value
                         )
@@ -494,7 +503,7 @@ fun ProcessingTelemetryHud(
                 if (!telemetryStats.isNullOrEmpty()) {
                     Text(
                         text = telemetryStats,
-                        fontSize = 9.sp,
+                        fontSize = 10.sp,
                         fontWeight = FontWeight.Normal,
                         color = ThemedColorSchemeKeyTokens.OnSurfaceVariant.value,
                         maxLines = 1,

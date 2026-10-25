@@ -8,4 +8,6 @@ data class App(
     val isSystemApp: Boolean,
     val selectionFlag: Int,
     val selected: Boolean,
+    val sizeText: String = "",
+    val sizeBytes: Double = 0.0,
 )
