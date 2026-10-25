@@ -45,9 +45,25 @@ class IndexViewModel @Inject constructor(
     private val appsRepo: AppsRepo,
     private val filesRepo: FilesRepo,
 ) : BaseViewModel<IndexUiState, IndexUiIntent, IndexUiEffect>(IndexUiState(latestRelease = null)) {
+    private val _rootInfoState = MutableStateFlow(RootInfo())
+    val rootInfoState: StateFlow<RootInfo> = _rootInfoState.asStateFlow()
+
+    private val _lastBackupTime: Flow<Long> = context.readLastBackupTime().flowOnIO()
+    val lastBackupTimeState: StateFlow<Long> = _lastBackupTime.stateInScope(0)
+
+    private val _directory: Flow<DirectoryEntity?> = directoryRepo.querySelectedByDirectoryTypeFlow().flowOnIO()
+    val directoryState: StateFlow<DirectoryEntity?> = _directory.stateInScope(null)
+
+    val appsCountState: StateFlow<Long> = appsRepo.countApps(OpType.BACKUP).flowOnIO().stateInScope(0L)
+    val backedUpAppsCountState: StateFlow<Long> = appsRepo.countApps(OpType.RESTORE).flowOnIO().stateInScope(0L)
+    val filesCountState: StateFlow<Long> = filesRepo.countFiles(OpType.BACKUP).flowOnIO().stateInScope(0L)
+    val backedUpFilesCountState: StateFlow<Long> = filesRepo.countFiles(OpType.RESTORE).flowOnIO().stateInScope(0L)
+
     init {
         launchOnIO {
-            _rootInfoState.value = RootUtil.queryRootInfo()
+            runCatching {
+                _rootInfoState.value = RootUtil.queryRootInfo()
+            }
         }
     }
 
@@ -56,7 +72,9 @@ class IndexViewModel @Inject constructor(
             is IndexUiIntent.Update -> {
                 directoryRepo.updateSelected()
                 launchOnIO {
-                    _rootInfoState.value = RootUtil.queryRootInfo()
+                    runCatching {
+                        _rootInfoState.value = RootUtil.queryRootInfo()
+                    }
                 }
 
                 runCatching {
@@ -76,18 +94,4 @@ class IndexViewModel @Inject constructor(
             }
         }
     }
-
-    private val _lastBackupTime: Flow<Long> = context.readLastBackupTime().flowOnIO()
-    val lastBackupTimeState: StateFlow<Long> = _lastBackupTime.stateInScope(0)
-
-    private val _rootInfoState = MutableStateFlow(RootInfo())
-    val rootInfoState: StateFlow<RootInfo> = _rootInfoState.asStateFlow()
-
-    private val _directory: Flow<DirectoryEntity?> = directoryRepo.querySelectedByDirectoryTypeFlow().flowOnIO()
-    val directoryState: StateFlow<DirectoryEntity?> = _directory.stateInScope(null)
-
-    val appsCountState: StateFlow<Long> = appsRepo.countApps(OpType.BACKUP).flowOnIO().stateInScope(0L)
-    val backedUpAppsCountState: StateFlow<Long> = appsRepo.countApps(OpType.RESTORE).flowOnIO().stateInScope(0L)
-    val filesCountState: StateFlow<Long> = filesRepo.countFiles(OpType.BACKUP).flowOnIO().stateInScope(0L)
-    val backedUpFilesCountState: StateFlow<Long> = filesRepo.countFiles(OpType.RESTORE).flowOnIO().stateInScope(0L)
 }

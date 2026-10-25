@@ -4,9 +4,9 @@ compileSdk = "35"
 minSdk = "24"
 targetSdk = "35"
 # __(API)____(version)_(abi)
-versionCode = "103"
-versionCodeAlpha = "103"
-versionName = "1.3"
+versionCode = "104"
+versionCodeAlpha = "104"
+versionName = "1.4"
 
 # libraries
 accompanist = "0.30.1"
