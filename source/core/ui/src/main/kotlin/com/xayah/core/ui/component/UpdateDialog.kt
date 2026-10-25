@@ -526,17 +526,6 @@ fun NoUpdateDialog(
                             )
                         }
                     }
-                            ) {
-                                Text(
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                                    text = "✓ Up to Date",
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = Color(0xFF2E7D32)
-                                )
-                            }
-                        }
-                    }
 
                     // Current Build Changelog Card
                     Surface(
