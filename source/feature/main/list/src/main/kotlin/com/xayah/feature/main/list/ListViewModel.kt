@@ -84,7 +84,12 @@ class ListViewModel @Inject constructor(
                             }
                         }
 
-                        OpType.RESTORE -> {}
+                        OpType.RESTORE -> {
+                            val state = uiState.value.castTo<Success.Apps>()
+                            if (state.isUpdating.not()) {
+                                WorkManagerInitializer.loadAppBackups(context, cloudName, backupDir)
+                            }
+                        }
                     }
                 }
 
@@ -97,7 +102,12 @@ class ListViewModel @Inject constructor(
                             }
                         }
 
-                        OpType.RESTORE -> {}
+                        OpType.RESTORE -> {
+                            val state = uiState.value.castTo<Success.Files>()
+                            if (state.isUpdating.not()) {
+                                WorkManagerInitializer.loadFileBackups(context, cloudName, backupDir)
+                            }
+                        }
                     }
                 }
 

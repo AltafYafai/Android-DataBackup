@@ -248,6 +248,9 @@
     <string name="backup_apps">Backup apps</string>
     <string name="backup_contacts">Backup contacts</string>
     <string name="backup_files">Backup files</string>
+    <string name="restore_files">Restore files</string>
+    <string name="backup_files_desc">Select and back up files and directories from your device storage</string>
+    <string name="restore_files_desc">Browse and restore backed up files and archives to your device</string>
     <string name="backup_messages">Backup messages</string>
     <string name="sync_to_cloud">Sync to cloud</string>
     <string name="dashboard">Dashboard</string>

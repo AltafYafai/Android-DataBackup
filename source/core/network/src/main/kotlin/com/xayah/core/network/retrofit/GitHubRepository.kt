@@ -26,5 +26,9 @@ class GitHubRepository @Inject constructor() {
         .create(Api::class.java)
 
     suspend fun getReleases(): List<Release> = service.getReleases()
-    suspend fun getLatestRelease(): Release = service.getLatestRelease()
+    suspend fun getLatestRelease(): Release = try {
+        service.getLatestRelease()
+    } catch (e: Exception) {
+        service.getReleases().firstOrNull() ?: throw e
+    }
 }

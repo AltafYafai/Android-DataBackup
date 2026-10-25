@@ -36,6 +36,7 @@ sealed class MainRoutes(val route: String) {
         fun getRoute(name: String) = "main_smb_setup/$name"
     }
     data object Settings : MainRoutes(route = "main_settings")
+    data object FilesHub : MainRoutes(route = "main_files_hub")
     data object Restore : MainRoutes(route = "main_restore")
     data object Reload : MainRoutes(route = "main_reload/{$ARG_ACCOUNT_NAME}/{$ARG_ACCOUNT_REMOTE}") {
         fun getRoute(name: String, remote: String) = "main_reload/${name}/${remote}"

@@ -90,8 +90,19 @@ class MediaRepository @Inject constructor(
         }
     }
 
+    private fun sortByBackupTimeNew(type: SortType): Comparator<MediaEntity> = when (type) {
+        SortType.ASCENDING -> {
+            compareBy { m -> m.extraInfo.lastBackupTime }
+        }
+
+        SortType.DESCENDING -> {
+            compareByDescending { m -> m.extraInfo.lastBackupTime }
+        }
+    }
+
     fun getSortComparatorNew(sortIndex: Int, sortType: SortType): Comparator<in MediaEntity> = when (sortIndex) {
         1 -> sortByDataSizeNew(sortType)
+        2 -> sortByBackupTimeNew(sortType)
         else -> sortByAlphabetNew(sortType)
     }
 

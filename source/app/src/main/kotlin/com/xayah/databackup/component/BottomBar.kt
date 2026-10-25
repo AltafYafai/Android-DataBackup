@@ -73,8 +73,8 @@ fun BackupVaultBottomBar(
     val selectedId = when {
         currentRoute == MainRoutes.Dashboard.route || currentRoute.startsWith(MainRoutes.Dashboard.route) -> "dashboard"
         currentRoute.startsWith("main_list") && currentTarget == Target.Apps.name && currentOpType == OpType.BACKUP.name -> "apps"
-        currentRoute.startsWith("main_list") && currentTarget == Target.Files.name && currentOpType == OpType.BACKUP.name -> "files"
-        currentRoute == MainRoutes.Restore.route || currentRoute.startsWith(MainRoutes.Restore.route) -> "restore"
+        currentRoute == MainRoutes.FilesHub.route || currentRoute.startsWith(MainRoutes.FilesHub.route) || (currentRoute.startsWith("main_list") && currentTarget == Target.Files.name) -> "files"
+        currentRoute == MainRoutes.Restore.route || currentRoute.startsWith(MainRoutes.Restore.route) || (currentRoute.startsWith("main_list") && currentTarget == Target.Apps.name && currentOpType == OpType.RESTORE.name) -> "restore"
         currentRoute == MainRoutes.Settings.route || currentRoute.startsWith(MainRoutes.Settings.route) -> "settings"
         else -> null
     }
@@ -113,8 +113,8 @@ fun BackupVaultBottomBar(
                         listOf(
                             NavTabItem("dashboard", "Dashboard", R.drawable.ic_rounded_home, MainRoutes.Dashboard.route),
                             NavTabItem("apps", "Apps", R.drawable.ic_rounded_package_2, MainRoutes.List.getRoute(Target.Apps, OpType.BACKUP)),
-                            NavTabItem("files", "Files", R.drawable.ic_rounded_folder_open, MainRoutes.List.getRoute(Target.Files, OpType.BACKUP)),
-                            NavTabItem("restore", "Restore", R.drawable.ic_rounded_history, MainRoutes.Restore.route),
+                            NavTabItem("files", "Files", R.drawable.ic_rounded_folder_open, MainRoutes.FilesHub.route),
+                            NavTabItem("restore", "Restore", R.drawable.ic_rounded_history, MainRoutes.List.getRoute(Target.Apps, OpType.RESTORE)),
                             NavTabItem("settings", "Settings", 0, MainRoutes.Settings.route),
                         )
                     }

@@ -3,9 +3,12 @@ package com.xayah.feature.main.dashboard
 import android.content.Context
 import androidx.compose.material3.ExperimentalMaterial3Api
 import com.xayah.core.common.util.BuildConfigUtil
+import com.xayah.core.data.repository.AppsRepo
 import com.xayah.core.data.repository.DirectoryRepository
+import com.xayah.core.data.repository.FilesRepo
 import com.xayah.core.datastore.ConstantUtil
 import com.xayah.core.datastore.readLastBackupTime
+import com.xayah.core.model.OpType
 import com.xayah.core.model.database.DirectoryEntity
 import com.xayah.core.network.model.Release
 import com.xayah.core.network.retrofit.GitHubRepository
@@ -35,6 +38,8 @@ class IndexViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val directoryRepo: DirectoryRepository,
     private val githubRepo: GitHubRepository,
+    private val appsRepo: AppsRepo,
+    private val filesRepo: FilesRepo,
 ) : BaseViewModel<IndexUiState, IndexUiIntent, IndexUiEffect>(IndexUiState(latestRelease = null)) {
     override suspend fun onEvent(state: IndexUiState, intent: IndexUiIntent) {
         when (intent) {
@@ -64,4 +69,9 @@ class IndexViewModel @Inject constructor(
 
     private val _directory: Flow<DirectoryEntity?> = directoryRepo.querySelectedByDirectoryTypeFlow().flowOnIO()
     val directoryState: StateFlow<DirectoryEntity?> = _directory.stateInScope(null)
+
+    val appsCountState: StateFlow<Long> = appsRepo.countApps(OpType.BACKUP).flowOnIO().stateInScope(0L)
+    val backedUpAppsCountState: StateFlow<Long> = appsRepo.countApps(OpType.RESTORE).flowOnIO().stateInScope(0L)
+    val filesCountState: StateFlow<Long> = filesRepo.countFiles(OpType.BACKUP).flowOnIO().stateInScope(0L)
+    val backedUpFilesCountState: StateFlow<Long> = filesRepo.countFiles(OpType.RESTORE).flowOnIO().stateInScope(0L)
 }

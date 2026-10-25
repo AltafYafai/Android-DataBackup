@@ -58,7 +58,10 @@ class UpdateRepo @Inject constructor(
 • Root and PackageInstaller install fallbacks"""
     }
 
-    private val okHttpClient = OkHttpClient.Builder().build()
+    private val okHttpClient = OkHttpClient.Builder()
+        .followRedirects(true)
+        .followSslRedirects(true)
+        .build()
 
     fun dismissUpdate() {
         _updateState.value = UpdateState.Idle

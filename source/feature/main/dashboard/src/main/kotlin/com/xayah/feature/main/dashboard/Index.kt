@@ -64,6 +64,10 @@ fun PageDashboard() {
     val lastBackupTime by viewModel.lastBackupTimeState.collectAsStateWithLifecycle()
     val directoryState by viewModel.directoryState.collectAsStateWithLifecycle()
     val nullBackupDir by remember(directoryState) { mutableStateOf(directoryState == null) }
+    val appsCount by viewModel.appsCountState.collectAsStateWithLifecycle()
+    val backedUpAppsCount by viewModel.backedUpAppsCountState.collectAsStateWithLifecycle()
+    val filesCount by viewModel.filesCountState.collectAsStateWithLifecycle()
+    val backedUpFilesCount by viewModel.backedUpFilesCountState.collectAsStateWithLifecycle()
     val dialogState = LocalSlotScope.current!!.dialogSlot
     val scope = rememberCoroutineScope()
 
@@ -117,69 +121,99 @@ fun PageDashboard() {
             modifier = Modifier
                 .paddingTop(SizeTokens.Level8)
                 .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(SizeTokens.Level24)
+            verticalArrangement = Arrangement.spacedBy(SizeTokens.Level20)
         ) {
-            Section(title = stringResource(id = R.string.overlook)) {
-                OverviewLastBackupCard(nullBackupDir = nullBackupDir, lastBackupTime = lastBackupTime) {
-                    if (nullBackupDir)
-                        navController.navigateSingle(MainRoutes.Directory.route)
-                }
-
-                if (directoryState != null) {
-                    OverviewStorageCard(
-                        stringResource(id = directoryState!!.titleResId),
-                        SegmentProgress(used = directoryState!!.usedBytes, total = directoryState!!.totalBytes),
-                        SegmentProgress(used = directoryState!!.childUsedBytes, total = directoryState!!.totalBytes),
-                    ) {
-                        navController.navigateSingle(MainRoutes.Directory.route)
-                    }
+            // Modern Hero Status Card
+            DashboardHeroStatusCard(
+                nullBackupDir = nullBackupDir,
+                lastBackupTime = lastBackupTime,
+                appsCount = appsCount,
+                backedUpAppsCount = backedUpAppsCount,
+                filesCount = filesCount,
+                backedUpFilesCount = backedUpFilesCount,
+            ) {
+                if (nullBackupDir) {
+                    navController.navigateSingle(MainRoutes.Directory.route)
                 }
             }
 
+            // Storage Overview Telemetry Card
+            if (directoryState != null) {
+                DashboardStorageCardExpressive(
+                    title = stringResource(id = directoryState!!.titleResId),
+                    used = SegmentProgress(used = directoryState!!.usedBytes, total = directoryState!!.totalBytes),
+                    backupUsed = SegmentProgress(used = directoryState!!.childUsedBytes, total = directoryState!!.totalBytes),
+                ) {
+                    navController.navigateSingle(MainRoutes.Directory.route)
+                }
+            }
+
+            // Quick Actions 2x2 Grid
             Section(title = stringResource(id = R.string.quick_actions)) {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(SizeTokens.Level12),
+                    verticalArrangement = Arrangement.spacedBy(SizeTokens.Level12)
                 ) {
-                    DashboardActionTile(
-                        enabled = nullBackupDir.not(),
-                        title = stringResource(id = R.string.backup_apps),
-                        subtitle = "Applications, user data, and external storage",
-                        icon = ImageVector.vectorResource(id = R.drawable.ic_rounded_package_2),
-                        colorContainer = ThemedColorSchemeKeyTokens.PrimaryContainer,
-                        onColorContainer = ThemedColorSchemeKeyTokens.OnPrimaryContainer
+                    androidx.compose.foundation.layout.Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(SizeTokens.Level12)
                     ) {
-                        navController.navigateSingle(MainRoutes.List.getRoute(target = Target.Apps, opType = OpType.BACKUP))
+                        DashboardExpressiveActionCard(
+                            modifier = Modifier.weight(1f),
+                            title = stringResource(id = R.string.backup_apps),
+                            subtitle = "Full apps & data",
+                            badgeText = if (appsCount > 0) "$appsCount apps" else "Ready",
+                            icon = ImageVector.vectorResource(id = R.drawable.ic_rounded_package_2),
+                            containerColor = ThemedColorSchemeKeyTokens.PrimaryContainer,
+                            onContainerColor = ThemedColorSchemeKeyTokens.OnPrimaryContainer,
+                            onClick = {
+                                navController.navigateSingle(MainRoutes.List.getRoute(target = Target.Apps, opType = OpType.BACKUP))
+                            }
+                        )
+
+                        DashboardExpressiveActionCard(
+                            modifier = Modifier.weight(1f),
+                            title = stringResource(id = R.string.restore),
+                            subtitle = "Restore snapshots",
+                            badgeText = if (backedUpAppsCount > 0) "$backedUpAppsCount saved" else "Empty",
+                            icon = ImageVector.vectorResource(id = R.drawable.ic_rounded_history),
+                            containerColor = ThemedColorSchemeKeyTokens.TertiaryContainer,
+                            onContainerColor = ThemedColorSchemeKeyTokens.OnTertiaryContainer,
+                            onClick = {
+                                navController.navigateSingle(MainRoutes.List.getRoute(target = Target.Apps, opType = OpType.RESTORE))
+                            }
+                        )
                     }
-                    DashboardActionTile(
-                        enabled = nullBackupDir.not(),
-                        title = stringResource(id = R.string.backup_files),
-                        subtitle = "Media files, documents, and device folders",
-                        icon = ImageVector.vectorResource(id = R.drawable.ic_rounded_folder_open),
-                        colorContainer = ThemedColorSchemeKeyTokens.SecondaryContainer,
-                        onColorContainer = ThemedColorSchemeKeyTokens.OnSecondaryContainer
+
+                    androidx.compose.foundation.layout.Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(SizeTokens.Level12)
                     ) {
-                        navController.navigateSingle(MainRoutes.List.getRoute(target = Target.Files, opType = OpType.BACKUP))
-                    }
-                    DashboardActionTile(
-                        enabled = nullBackupDir.not(),
-                        title = stringResource(id = R.string.restore),
-                        subtitle = "Restore applications & data from previous snapshots",
-                        icon = ImageVector.vectorResource(id = R.drawable.ic_rounded_history),
-                        colorContainer = ThemedColorSchemeKeyTokens.TertiaryContainer,
-                        onColorContainer = ThemedColorSchemeKeyTokens.OnTertiaryContainer
-                    ) {
-                        navController.navigateSingle(MainRoutes.Restore.route)
-                    }
-                    DashboardActionTile(
-                        enabled = nullBackupDir.not(),
-                        title = stringResource(R.string.history),
-                        subtitle = "Past backup logs, speed records, and details",
-                        icon = Icons.Rounded.ListAlt,
-                        colorContainer = ThemedColorSchemeKeyTokens.SurfaceContainerHigh,
-                        onColorContainer = ThemedColorSchemeKeyTokens.OnSurface
-                    ) {
-                        navController.navigateSingle(MainRoutes.History.route)
+                        DashboardExpressiveActionCard(
+                            modifier = Modifier.weight(1f),
+                            title = stringResource(id = R.string.backup_files),
+                            subtitle = "Backup & restore",
+                            badgeText = if (filesCount > 0) "$filesCount files" else "Configure",
+                            icon = ImageVector.vectorResource(id = R.drawable.ic_rounded_folder_open),
+                            containerColor = ThemedColorSchemeKeyTokens.SecondaryContainer,
+                            onContainerColor = ThemedColorSchemeKeyTokens.OnSecondaryContainer,
+                            onClick = {
+                                navController.navigateSingle(MainRoutes.FilesHub.route)
+                            }
+                        )
+
+                        DashboardExpressiveActionCard(
+                            modifier = Modifier.weight(1f),
+                            title = stringResource(id = R.string.history),
+                            subtitle = "Logs & speeds",
+                            badgeText = "Records",
+                            icon = Icons.Rounded.ListAlt,
+                            containerColor = ThemedColorSchemeKeyTokens.SurfaceContainerHigh,
+                            onContainerColor = ThemedColorSchemeKeyTokens.OnSurface,
+                            onClick = {
+                                navController.navigateSingle(MainRoutes.History.route)
+                            }
+                        )
                     }
                 }
             }

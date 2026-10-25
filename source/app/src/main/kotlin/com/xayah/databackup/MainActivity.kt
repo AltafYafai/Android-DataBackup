@@ -16,6 +16,8 @@ import androidx.compose.ui.Modifier
 import androidx.core.view.WindowCompat
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.xayah.core.model.OpType
+import com.xayah.core.model.Target
 import com.xayah.core.ui.component.AnimatedNavHost
 import com.xayah.core.ui.route.MainRoutes
 import com.xayah.core.ui.theme.DataBackupTheme
@@ -33,6 +35,7 @@ import com.xayah.feature.main.processing.medium.backup.MediumBackupProcessingGra
 import com.xayah.feature.main.processing.medium.restore.MediumRestoreProcessingGraph
 import com.xayah.feature.main.processing.packages.backup.PackagesBackupProcessingGraph
 import com.xayah.feature.main.processing.packages.restore.PackagesRestoreProcessingGraph
+import com.xayah.feature.main.restore.FilesHubScreen
 import com.xayah.feature.main.restore.PageRestore
 import com.xayah.feature.main.restore.reload.PageReload
 import com.xayah.feature.main.settings.PageSettings
@@ -181,8 +184,16 @@ class MainActivity : AppCompatActivity() {
                             composable(MainRoutes.Settings.route) {
                                 PageSettings()
                             }
+                            composable(MainRoutes.FilesHub.route) {
+                                FilesHubScreen()
+                            }
                             composable(MainRoutes.Restore.route) {
-                                PageRestore()
+                                val nav = LocalNavController.current!!
+                                LaunchedEffect(Unit) {
+                                    nav.navigate(MainRoutes.List.getRoute(Target.Apps, OpType.RESTORE)) {
+                                        popUpTo(MainRoutes.Restore.route) { inclusive = true }
+                                    }
+                                }
                             }
                             composable(MainRoutes.Reload.route) {
                                 PageReload()
