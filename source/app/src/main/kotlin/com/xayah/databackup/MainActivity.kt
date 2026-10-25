@@ -36,6 +36,7 @@ import com.xayah.feature.main.processing.medium.restore.MediumRestoreProcessingG
 import com.xayah.feature.main.processing.packages.backup.PackagesBackupProcessingGraph
 import com.xayah.feature.main.processing.packages.restore.PackagesRestoreProcessingGraph
 import com.xayah.feature.main.restore.FilesHubScreen
+import com.xayah.feature.main.restore.SystemDataScreen
 import com.xayah.feature.main.restore.PageRestore
 import com.xayah.feature.main.restore.reload.PageReload
 import com.xayah.feature.main.settings.PageSettings
@@ -204,6 +205,9 @@ class MainActivity : AppCompatActivity() {
                             }
                             composable(MainRoutes.FilesHub.route) {
                                 FilesHubScreen()
+                            }
+                            composable(MainRoutes.SystemData.route) {
+                                SystemDataScreen()
                             }
                             composable(MainRoutes.Restore.route) {
                                 val nav = LocalNavController.current!!

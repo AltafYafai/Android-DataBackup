@@ -16,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.ListAlt
+import androidx.compose.material.icons.rounded.PhoneAndroid
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
@@ -217,6 +218,19 @@ fun PageDashboard() {
                             }
                         )
                     }
+
+                    DashboardExpressiveActionCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        title = "System Data",
+                        subtitle = "Call Logs • SMS • Contacts • Wi-Fi",
+                        badgeText = "System Vault",
+                        icon = Icons.Rounded.PhoneAndroid,
+                        containerColor = ThemedColorSchemeKeyTokens.SurfaceContainerHighest,
+                        onContainerColor = ThemedColorSchemeKeyTokens.OnSurface,
+                        onClick = {
+                            navController.navigateSingle(MainRoutes.SystemData.route)
+                        }
+                    )
                 }
             }
 

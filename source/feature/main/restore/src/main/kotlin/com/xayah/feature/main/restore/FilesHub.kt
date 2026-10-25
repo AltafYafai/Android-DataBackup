@@ -26,6 +26,7 @@ import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.FolderOpen
 import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.rounded.Key
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -167,6 +168,61 @@ fun FilesHubScreen(
                     navController.navigateSingle(MainRoutes.List.getRoute(Target.Files, OpType.RESTORE))
                 }
             )
+
+            // System Data Shortcut Banner
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { navController.navigateSingle(MainRoutes.SystemData.route) },
+                shape = RoundedCornerShape(20.dp),
+                color = ThemedColorSchemeKeyTokens.SurfaceContainerHighest.value.copy(alpha = 0.5f),
+                border = BorderStroke(1.dp, ThemedColorSchemeKeyTokens.OutlineVariant.value.copy(alpha = 0.3f))
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = SizeTokens.Level16, vertical = SizeTokens.Level14),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(SizeTokens.Level12)
+                ) {
+                    Surface(
+                        modifier = Modifier.size(40.dp),
+                        shape = CircleShape,
+                        color = ThemedColorSchemeKeyTokens.Primary.value.copy(alpha = 0.12f)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Rounded.Key,
+                                contentDescription = null,
+                                tint = ThemedColorSchemeKeyTokens.Primary.value,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "System Data Vault",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = ThemedColorSchemeKeyTokens.OnSurface.value
+                        )
+                        Text(
+                            text = "Backup & restore Call Logs, SMS, Contacts & Wi-Fi",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = ThemedColorSchemeKeyTokens.OnSurfaceVariant.value,
+                            fontSize = 12.sp
+                        )
+                    }
+
+                    Icon(
+                        imageVector = Icons.Rounded.ChevronRight,
+                        contentDescription = null,
+                        tint = ThemedColorSchemeKeyTokens.Outline.value,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(SizeTokens.Level64 + SizeTokens.Level32))
         }
