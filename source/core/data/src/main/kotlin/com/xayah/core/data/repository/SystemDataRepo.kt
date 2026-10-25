@@ -40,19 +40,82 @@ class SystemDataRepo @Inject constructor(
 
     private fun log(block: () -> String) = LogUtil.log { TAG to block() }
 
-    private fun getSystemDir(): File {
-        val dir = File(pathUtil.getLocalBackupSystemDir())
-        if (!dir.exists()) dir.mkdirs()
-        return dir
+    private fun getSystemDir(): String = pathUtil.getLocalBackupSystemDir()
+    private fun getMetaPath(): String = "${getSystemDir()}/system_backup_meta.json"
+    private fun getCallLogPath(): String = "${getSystemDir()}/calllog/call_logs.json"
+    private fun getSmsPath(): String = "${getSystemDir()}/sms/sms_messages.json"
+    private fun getContactsJsonPath(): String = "${getSystemDir()}/contacts/contacts.json"
+    private fun getContactsVcfPath(): String = "${getSystemDir()}/contacts/contacts.vcf"
+    private fun getWifiJsonPath(): String = "${getSystemDir()}/wifi/wifi_networks.json"
+    private fun getWifiXmlPath(): String = "${getSystemDir()}/wifi/WifiConfigStore.xml"
+
+    suspend fun writeToBackup(path: String, content: String): Boolean = withIOContext {
+        // 1. Try standard Java file write (works on internal storage)
+        val javaSuccess = runCatching {
+            val file = File(path)
+            file.parentFile?.mkdirs()
+            file.writeText(content)
+            true
+        }.getOrDefault(false)
+
+        if (javaSuccess) return@withIOContext true
+
+        // 2. If EACCES / permission denied (e.g. /mnt/media_rw/ SD card), write via root
+        val parent = PathUtil.getParentPath(path)
+        BaseUtil.execute("mkdir -p '$parent'")
+
+        // Write content to internal cacheDir first (guaranteed writable)
+        val tmpFile = File(context.cacheDir, "sys_data_${System.currentTimeMillis()}.tmp")
+        val written = runCatching {
+            tmpFile.writeText(content)
+            true
+        }.getOrDefault(false)
+
+        if (written && tmpFile.exists()) {
+            val copyRes = BaseUtil.execute("cp '${tmpFile.absolutePath}' '$path'")
+            BaseUtil.execute("chmod 666 '$path'")
+            tmpFile.delete()
+            if (copyRes.isSuccess) return@withIOContext true
+        }
+
+        // 3. Fallback: try rootService.writeText
+        return@withIOContext rootService.writeText(content, path)
     }
 
-    private fun getMetaFile(): File = File(getSystemDir(), "system_backup_meta.json")
-    private fun getCallLogFile(): File = File(File(getSystemDir(), "calllog").apply { mkdirs() }, "call_logs.json")
-    private fun getSmsFile(): File = File(File(getSystemDir(), "sms").apply { mkdirs() }, "sms_messages.json")
-    private fun getContactsFile(): File = File(File(getSystemDir(), "contacts").apply { mkdirs() }, "contacts.json")
-    private fun getContactsVcfFile(): File = File(File(getSystemDir(), "contacts").apply { mkdirs() }, "contacts.vcf")
-    private fun getWifiJsonFile(): File = File(File(getSystemDir(), "wifi").apply { mkdirs() }, "wifi_networks.json")
-    private fun getWifiXmlFile(): File = File(File(getSystemDir(), "wifi").apply { mkdirs() }, "WifiConfigStore.xml")
+    suspend fun readFromBackup(path: String): String = withIOContext {
+        // 1. Try standard Java file read
+        val javaText = runCatching {
+            val file = File(path)
+            if (file.exists() && file.canRead()) file.readText() else null
+        }.getOrNull()
+
+        if (!javaText.isNullOrEmpty()) return@withIOContext javaText
+
+        // 2. Try rootService.readText
+        val rootText = runCatching { rootService.readText(path) }.getOrDefault("")
+        if (rootText.isNotEmpty()) return@withIOContext rootText
+
+        // 3. Try root shell cat
+        val catRes = BaseUtil.execute("cat '$path'", log = false)
+        if (catRes.isSuccess && catRes.outString.isNotEmpty()) return@withIOContext catRes.outString
+
+        return@withIOContext ""
+    }
+
+    suspend fun backupExists(path: String): Boolean = withIOContext {
+        val file = File(path)
+        if (file.exists() && file.length() > 0) return@withIOContext true
+        if (rootService.exists(path)) return@withIOContext true
+        val check = BaseUtil.execute("[ -s '$path' ] && echo 'yes'", log = false)
+        return@withIOContext check.isSuccess && check.out.contains("yes")
+    }
+
+    suspend fun getBackupTimestamp(path: String): Long = withIOContext {
+        val file = File(path)
+        if (file.exists()) return@withIOContext file.lastModified()
+        val statRes = BaseUtil.execute("stat -c %Y '$path'", log = false)
+        return@withIOContext statRes.out.firstOrNull()?.trim()?.toLongOrNull()?.let { it * 1000L } ?: 0L
+    }
 
     suspend fun ensurePermissions() = withIOContext {
         runCatching {
@@ -66,18 +129,19 @@ class SystemDataRepo @Inject constructor(
         }
     }
 
-    fun readMeta(): SystemBackupMeta = runCatching {
-        val file = getMetaFile()
-        if (file.exists()) {
-            val json = file.readText()
-            gsonUtil.fromJson<SystemBackupMeta>(json, object : TypeToken<SystemBackupMeta>() {}.type)
-        } else {
-            SystemBackupMeta(0, 0, 0, 0, 0)
-        }
-    }.getOrDefault(SystemBackupMeta(0, 0, 0, 0, 0))
+    suspend fun readMeta(): SystemBackupMeta = withIOContext {
+        runCatching {
+            val json = readFromBackup(getMetaPath())
+            if (json.isNotEmpty()) {
+                gsonUtil.fromJson<SystemBackupMeta>(json, object : TypeToken<SystemBackupMeta>() {}.type)
+            } else {
+                SystemBackupMeta(0, 0, 0, 0, 0)
+            }
+        }.getOrDefault(SystemBackupMeta(0, 0, 0, 0, 0))
+    }
 
-    private fun saveMeta(meta: SystemBackupMeta) = runCatching {
-        getMetaFile().writeText(gsonUtil.toJson(meta))
+    private suspend fun saveMeta(meta: SystemBackupMeta) {
+        writeToBackup(getMetaPath(), gsonUtil.toJson(meta))
     }
 
     suspend fun queryDeviceCallLogsCount(): Int = withIOContext {
@@ -134,39 +198,39 @@ class SystemDataRepo @Inject constructor(
         val contactsDevice = queryDeviceContactsCount()
         val wifiDevice = queryDeviceWifiCount()
 
-        val callLogBackupFile = getCallLogFile()
-        val smsBackupFile = getSmsFile()
-        val contactsBackupFile = getContactsFile()
-        val wifiBackupFile = getWifiJsonFile()
+        val callLogExists = backupExists(getCallLogPath())
+        val smsExists = backupExists(getSmsPath())
+        val contactsExists = backupExists(getContactsJsonPath())
+        val wifiExists = backupExists(getWifiJsonPath())
 
         listOf(
             SystemDataCategoryInfo(
                 type = SystemDataType.CALL_LOG,
                 title = "Call Logs",
                 countOnDevice = callLogsDevice,
-                backedUpCount = if (callLogBackupFile.exists()) meta.callLogsCount else 0,
-                lastBackupTimestamp = if (callLogBackupFile.exists()) callLogBackupFile.lastModified() else 0L,
+                backedUpCount = if (callLogExists) meta.callLogsCount else 0,
+                lastBackupTimestamp = if (callLogExists) getBackupTimestamp(getCallLogPath()) else 0L,
             ),
             SystemDataCategoryInfo(
                 type = SystemDataType.SMS,
                 title = "SMS Messages",
                 countOnDevice = smsDevice,
-                backedUpCount = if (smsBackupFile.exists()) meta.smsCount else 0,
-                lastBackupTimestamp = if (smsBackupFile.exists()) smsBackupFile.lastModified() else 0L,
+                backedUpCount = if (smsExists) meta.smsCount else 0,
+                lastBackupTimestamp = if (smsExists) getBackupTimestamp(getSmsPath()) else 0L,
             ),
             SystemDataCategoryInfo(
                 type = SystemDataType.CONTACTS,
                 title = "Contacts",
                 countOnDevice = contactsDevice,
-                backedUpCount = if (contactsBackupFile.exists()) meta.contactsCount else 0,
-                lastBackupTimestamp = if (contactsBackupFile.exists()) contactsBackupFile.lastModified() else 0L,
+                backedUpCount = if (contactsExists) meta.contactsCount else 0,
+                lastBackupTimestamp = if (contactsExists) getBackupTimestamp(getContactsJsonPath()) else 0L,
             ),
             SystemDataCategoryInfo(
                 type = SystemDataType.WIFI,
                 title = "Wi-Fi Passwords",
                 countOnDevice = wifiDevice,
-                backedUpCount = if (wifiBackupFile.exists()) meta.wifiCount else 0,
-                lastBackupTimestamp = if (wifiBackupFile.exists()) wifiBackupFile.lastModified() else 0L,
+                backedUpCount = if (wifiExists) meta.wifiCount else 0,
+                lastBackupTimestamp = if (wifiExists) getBackupTimestamp(getWifiJsonPath()) else 0L,
             ),
         )
     }
@@ -228,7 +292,8 @@ class SystemDataRepo @Inject constructor(
 
             onProgress("Exporting ${list.size} call records to JSON...")
             val json = gsonUtil.toJson(list)
-            getCallLogFile().writeText(json)
+            val written = writeToBackup(getCallLogPath(), json)
+            if (!written) error("Failed to write call logs to: ${getCallLogPath()}")
 
             val currentMeta = readMeta()
             saveMeta(currentMeta.copy(timestamp = System.currentTimeMillis(), callLogsCount = list.size))
@@ -240,11 +305,10 @@ class SystemDataRepo @Inject constructor(
     suspend fun restoreCallLogs(onProgress: (String) -> Unit = {}): Result<Int> = withIOContext {
         runCatching {
             ensurePermissions()
-            val file = getCallLogFile()
-            if (!file.exists()) error("No call log backup found")
+            val json = readFromBackup(getCallLogPath())
+            if (json.isEmpty()) error("No call log backup found")
 
             onProgress("Parsing call logs backup...")
-            val json = file.readText()
             val list = gsonUtil.fromJson<List<CallLogItem>>(json, object : TypeToken<List<CallLogItem>>() {}.type)
             if (list.isNullOrEmpty()) return@runCatching 0
 
@@ -348,7 +412,8 @@ class SystemDataRepo @Inject constructor(
 
             onProgress("Exporting ${list.size} SMS messages to JSON...")
             val json = gsonUtil.toJson(list)
-            getSmsFile().writeText(json)
+            val written = writeToBackup(getSmsPath(), json)
+            if (!written) error("Failed to write SMS messages to: ${getSmsPath()}")
 
             val currentMeta = readMeta()
             saveMeta(currentMeta.copy(timestamp = System.currentTimeMillis(), smsCount = list.size))
@@ -360,11 +425,10 @@ class SystemDataRepo @Inject constructor(
     suspend fun restoreSms(onProgress: (String) -> Unit = {}): Result<Int> = withIOContext {
         runCatching {
             ensurePermissions()
-            val file = getSmsFile()
-            if (!file.exists()) error("No SMS backup found")
+            val json = readFromBackup(getSmsPath())
+            if (json.isEmpty()) error("No SMS backup found")
 
             onProgress("Parsing SMS backup...")
-            val json = file.readText()
             val list = gsonUtil.fromJson<List<SmsItem>>(json, object : TypeToken<List<SmsItem>>() {}.type)
             if (list.isNullOrEmpty()) return@runCatching 0
 
@@ -520,7 +584,7 @@ class SystemDataRepo @Inject constructor(
             }
 
             onProgress("Exporting ${list.size} contacts to JSON and vCard...")
-            getContactsFile().writeText(gsonUtil.toJson(list))
+            val jsonSuccess = writeToBackup(getContactsJsonPath(), gsonUtil.toJson(list))
 
             // Build standard vCard 3.0 (.vcf)
             val vcf = StringBuilder()
@@ -550,7 +614,9 @@ class SystemDataRepo @Inject constructor(
                 }
                 vcf.append("END:VCARD\n")
             }
-            getContactsVcfFile().writeText(vcf.toString())
+            writeToBackup(getContactsVcfPath(), vcf.toString())
+
+            if (!jsonSuccess) error("Failed to write contacts to: ${getContactsJsonPath()}")
 
             val currentMeta = readMeta()
             saveMeta(currentMeta.copy(timestamp = System.currentTimeMillis(), contactsCount = list.size))
@@ -562,11 +628,10 @@ class SystemDataRepo @Inject constructor(
     suspend fun restoreContacts(onProgress: (String) -> Unit = {}): Result<Int> = withIOContext {
         runCatching {
             ensurePermissions()
-            val file = getContactsFile()
-            if (!file.exists()) error("No contacts backup found")
+            val json = readFromBackup(getContactsJsonPath())
+            if (json.isEmpty()) error("No contacts backup found")
 
             onProgress("Parsing contacts backup...")
-            val json = file.readText()
             val list = gsonUtil.fromJson<List<ContactItem>>(json, object : TypeToken<List<ContactItem>>() {}.type)
             if (list.isNullOrEmpty()) return@runCatching 0
 
@@ -660,7 +725,7 @@ class SystemDataRepo @Inject constructor(
                 }
 
                 runCatching {
-                    val results = context.contentResolver.applyBatch(ContactsContract.AUTHORITY, ops)
+                    context.contentResolver.applyBatch(ContactsContract.AUTHORITY, ops)
                     count += chunk.size
                 }.onFailure {
                     log { "Failed batch contacts insert: ${it.message}" }
@@ -803,8 +868,9 @@ class SystemDataRepo @Inject constructor(
             val networks = parseWifiNetworks(rawContent, sourcePath.endsWith(".conf"))
 
             onProgress("Saving Wi-Fi XML and JSON snapshots...")
-            getWifiXmlFile().writeText(rawContent)
-            getWifiJsonFile().writeText(gsonUtil.toJson(networks))
+            val successXml = writeToBackup(getWifiXmlPath(), rawContent)
+            val successJson = writeToBackup(getWifiJsonPath(), gsonUtil.toJson(networks))
+            if (!successXml && !successJson) error("Failed to write Wi-Fi configuration to: ${getWifiXmlPath()}")
 
             val currentMeta = readMeta()
             saveMeta(currentMeta.copy(timestamp = System.currentTimeMillis(), wifiCount = networks.size))
@@ -815,9 +881,9 @@ class SystemDataRepo @Inject constructor(
 
     suspend fun restoreWifi(onProgress: (String) -> Unit = {}): Result<Int> = withIOContext {
         runCatching {
-            val xmlFile = getWifiXmlFile()
-            val jsonFile = getWifiJsonFile()
-            if (!xmlFile.exists() && !jsonFile.exists()) error("No Wi-Fi backup snapshot found")
+            val rawXml = readFromBackup(getWifiXmlPath())
+            val rawJson = readFromBackup(getWifiJsonPath())
+            if (rawXml.isEmpty() && rawJson.isEmpty()) error("No Wi-Fi backup snapshot found")
 
             onProgress("Locating device Wi-Fi store...")
             val paths = getWifiConfigPaths()
@@ -842,20 +908,22 @@ class SystemDataRepo @Inject constructor(
             }
 
             onProgress("Writing Wi-Fi configurations to $targetPath...")
-            if (xmlFile.exists()) {
-                val backupXmlPath = xmlFile.absolutePath
-                BaseUtil.execute("cp '$backupXmlPath' '$targetPath'")
+            if (rawXml.isNotEmpty()) {
+                val tmpFile = File(context.cacheDir, "wifi_restore_tmp.xml")
+                tmpFile.writeText(rawXml)
+                BaseUtil.execute("cp '${tmpFile.absolutePath}' '$targetPath'")
                 BaseUtil.execute("chmod 600 '$targetPath'")
                 BaseUtil.execute("chown 1010:1010 '$targetPath'")
                 BaseUtil.execute("chcon u:object_r:wifi_data_file:s0 '$targetPath'")
+                tmpFile.delete()
             }
 
             onProgress("Reloading Wi-Fi subsystem...")
             BaseUtil.execute("cmd -w wifi reload || cmd wifi reload || (svc wifi disable && sleep 1 && svc wifi enable)")
 
             // Also read networks count
-            val count = if (jsonFile.exists()) {
-                val list = gsonUtil.fromJson<List<WifiNetworkItem>>(jsonFile.readText(), object : TypeToken<List<WifiNetworkItem>>() {}.type)
+            val count = if (rawJson.isNotEmpty()) {
+                val list = gsonUtil.fromJson<List<WifiNetworkItem>>(rawJson, object : TypeToken<List<WifiNetworkItem>>() {}.type)
                 list?.size ?: 0
             } else 1
 
@@ -865,10 +933,10 @@ class SystemDataRepo @Inject constructor(
     }
 
     suspend fun getSavedWifiFromBackup(): List<WifiNetworkItem> = withIOContext {
-        val file = getWifiJsonFile()
-        if (file.exists()) {
+        val json = readFromBackup(getWifiJsonPath())
+        if (json.isNotEmpty()) {
             runCatching {
-                gsonUtil.fromJson<List<WifiNetworkItem>>(file.readText(), object : TypeToken<List<WifiNetworkItem>>() {}.type)
+                gsonUtil.fromJson<List<WifiNetworkItem>>(json, object : TypeToken<List<WifiNetworkItem>>() {}.type)
             }.getOrDefault(emptyList())
         } else {
             emptyList()
