@@ -26,6 +26,9 @@ dependencies {
     // Preferences DataStore
     implementation(libs.androidx.datastore.preferences)
 
+    // OkHttp
+    implementation(libs.okhttp)
+
     // Gson
     implementation(libs.gson)
 
