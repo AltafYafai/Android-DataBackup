@@ -49,6 +49,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.xayah.core.model.OperationState
+import com.xayah.core.model.util.formatSize
 import com.xayah.core.ui.component.PackageIconImage
 import com.xayah.core.ui.model.ProcessingCardItem
 import com.xayah.core.ui.theme.ThemedColorSchemeKeyTokens
@@ -304,83 +305,148 @@ fun ProcessingTelemetryHud(
                 }
             }
 
-            // 4. Style 3 Partition Pipeline: Segmented Cyber Cells (APK, DATA, OBB, MEDIA)
+            // 4. Style 3 Partition Pipeline: 3x2 Segmented Grid Cells (APK, USER, USER_DE, DATA, OBB, MEDIA)
             if (partitions.isNotEmpty()) {
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        text = "PARTITION PIPELINE",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = ThemedColorSchemeKeyTokens.OnSurfaceVariant.value,
-                        fontSize = 9.sp,
-                        letterSpacing = 0.8.sp
-                    )
-                    Spacer(modifier = Modifier.height(SizeTokens.Level6))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(SizeTokens.Level6)
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        partitions.forEachIndexed { idx, part ->
-                            val isCompleted = part.state == OperationState.DONE || (idx < activePartitionIndex)
-                            val isActive = part.state == OperationState.PROCESSING || (idx == activePartitionIndex && !isCompleted && !isFinished)
-                            val isPending = !isCompleted && !isActive
+                        Text(
+                            text = "PARTITION PIPELINE",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = ThemedColorSchemeKeyTokens.OnSurfaceVariant.value,
+                            fontSize = 9.sp,
+                            letterSpacing = 0.8.sp
+                        )
+                        Text(
+                            text = "${partitions.count { it.state == OperationState.DONE || it.state == OperationState.SKIP }}/${partitions.size}",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = ThemedColorSchemeKeyTokens.Primary.value,
+                            fontSize = 9.sp
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(SizeTokens.Level6))
 
-                            val bgColor = when {
-                                isCompleted -> ThemedColorSchemeKeyTokens.PrimaryContainer.value.copy(alpha = 0.65f)
-                                isActive -> ThemedColorSchemeKeyTokens.Primary.value
-                                else -> ThemedColorSchemeKeyTokens.SurfaceContainerHighest.value.copy(alpha = 0.5f)
-                            }
-                            val contentColor = when {
-                                isCompleted -> ThemedColorSchemeKeyTokens.OnPrimaryContainer.value
-                                isActive -> ThemedColorSchemeKeyTokens.OnPrimary.value
-                                else -> ThemedColorSchemeKeyTokens.OnSurfaceVariant.value.copy(alpha = 0.6f)
-                            }
-
-                            Surface(
-                                modifier = Modifier.weight(1f),
-                                shape = RoundedCornerShape(SizeTokens.Level8),
-                                color = bgColor,
-                                border = if (isActive) BorderStroke(1.dp, ThemedColorSchemeKeyTokens.Primary.value) else null
+                    val columns = if (partitions.size <= 2) partitions.size else 3
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(SizeTokens.Level6)
+                    ) {
+                        partitions.chunked(columns).forEachIndexed { rowIndex, rowPartitions ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(SizeTokens.Level6)
                             ) {
-                                Column(
-                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 6.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Center
-                                ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(2.dp)
-                                    ) {
-                                        Text(
-                                            text = when {
-                                                isCompleted -> "✓"
-                                                isActive -> "⟳"
-                                                else -> "○"
-                                            },
-                                            fontSize = 9.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = contentColor
-                                        )
-                                        Text(
-                                            text = part.title.uppercase(),
-                                            fontSize = 9.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = contentColor,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
+                                rowPartitions.forEachIndexed { colIndex, part ->
+                                    val idx = rowIndex * columns + colIndex
+                                    val isCompleted = part.state == OperationState.DONE || (idx < activePartitionIndex)
+                                    val isSkip = part.state == OperationState.SKIP
+                                    val isError = part.state == OperationState.ERROR
+                                    val isActive = part.state == OperationState.PROCESSING || (idx == activePartitionIndex && !isCompleted && !isSkip && !isError && !isFinished)
+
+                                    val bgColor = when {
+                                        isCompleted -> ThemedColorSchemeKeyTokens.PrimaryContainer.value.copy(alpha = 0.65f)
+                                        isActive -> ThemedColorSchemeKeyTokens.Primary.value
+                                        isError -> ThemedColorSchemeKeyTokens.ErrorContainer.value.copy(alpha = 0.7f)
+                                        isSkip -> ThemedColorSchemeKeyTokens.SurfaceContainerHighest.value.copy(alpha = 0.35f)
+                                        else -> ThemedColorSchemeKeyTokens.SurfaceContainerHighest.value.copy(alpha = 0.5f)
                                     }
-                                    Text(
-                                        text = when {
-                                            isCompleted -> "100%"
-                                            isActive -> if (part.progress >= 0f) "${(part.progress * 100).toInt()}%" else "ACTIVE"
-                                            else -> "WAIT"
-                                        },
-                                        fontSize = 8.sp,
-                                        fontWeight = FontWeight.Medium,
-                                        color = contentColor.copy(alpha = 0.85f),
-                                        maxLines = 1
-                                    )
+                                    val contentColor = when {
+                                        isCompleted -> ThemedColorSchemeKeyTokens.OnPrimaryContainer.value
+                                        isActive -> ThemedColorSchemeKeyTokens.OnPrimary.value
+                                        isError -> ThemedColorSchemeKeyTokens.OnErrorContainer.value
+                                        isSkip -> ThemedColorSchemeKeyTokens.OnSurfaceVariant.value.copy(alpha = 0.5f)
+                                        else -> ThemedColorSchemeKeyTokens.OnSurfaceVariant.value.copy(alpha = 0.7f)
+                                    }
+
+                                    val displayTitle = part.title
+                                        .replace(Regex("^(Backup|Restore)\\s*", RegexOption.IGNORE_CASE), "")
+                                        .trim()
+                                        .uppercase()
+
+                                    val sizeText = if (part.bytes > 0) part.bytes.toDouble().formatSize() else ""
+
+                                    val pct = when {
+                                        part.content.endsWith("%") -> part.content
+                                        part.progress > 0f -> "${(part.progress * 100).toInt()}%"
+                                        streamProgress > 0f -> "${(streamProgress * 100).toInt()}%"
+                                        else -> "${(animatedStreamProgress.value * 100).toInt().coerceAtLeast(1)}%"
+                                    }
+
+                                    Surface(
+                                        modifier = Modifier.weight(1f),
+                                        shape = RoundedCornerShape(SizeTokens.Level8),
+                                        color = bgColor,
+                                        border = if (isActive) BorderStroke(1.dp, ThemedColorSchemeKeyTokens.Primary.value) else null
+                                    ) {
+                                        Column(
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 6.dp),
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            verticalArrangement = Arrangement.Center
+                                        ) {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(3.dp)
+                                            ) {
+                                                Text(
+                                                    text = when {
+                                                        isCompleted -> "✓"
+                                                        isActive -> "⟳"
+                                                        isSkip -> "⊘"
+                                                        isError -> "✕"
+                                                        else -> "○"
+                                                    },
+                                                    fontSize = 9.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = contentColor
+                                                )
+                                                Text(
+                                                    text = displayTitle,
+                                                    fontSize = 9.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = contentColor,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                            }
+
+                                            Spacer(modifier = Modifier.height(2.dp))
+
+                                            Text(
+                                                text = when {
+                                                    isCompleted -> "100%"
+                                                    isActive -> pct
+                                                    isSkip -> "SKIP"
+                                                    isError -> "ERROR"
+                                                    else -> "WAIT"
+                                                },
+                                                fontSize = 8.5.sp,
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = contentColor.copy(alpha = 0.95f),
+                                                maxLines = 1
+                                            )
+
+                                            if (sizeText.isNotEmpty()) {
+                                                Text(
+                                                    text = sizeText,
+                                                    fontSize = 7.5.sp,
+                                                    fontWeight = FontWeight.Normal,
+                                                    color = contentColor.copy(alpha = 0.8f),
+                                                    maxLines = 1
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+
+                                if (rowPartitions.size < columns) {
+                                    repeat(columns - rowPartitions.size) {
+                                        Spacer(modifier = Modifier.weight(1f))
+                                    }
                                 }
                             }
                         }

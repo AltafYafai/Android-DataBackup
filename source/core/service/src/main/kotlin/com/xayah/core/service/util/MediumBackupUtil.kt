@@ -56,12 +56,14 @@ class MediumBackupUtil @Inject constructor(
         bytes: Long? = null,
         log: String? = null,
         content: String? = null,
+        progress: Float? = null,
     ) = run {
         mediaInfo.also {
             if (state != null) it.state = state
             if (bytes != null) it.bytes = bytes
             if (log != null) it.log = log
             if (content != null) it.content = content
+            if (progress != null) it.progress = progress
         }
         taskDao.upsert(this)
     }
@@ -88,34 +90,60 @@ class MediumBackupUtil @Inject constructor(
         }
 
         val sizeBytes = rootService.calculateSize(src)
-        t.updateInfo(state = OperationState.PROCESSING, bytes = sizeBytes)
+        t.updateInfo(state = OperationState.PROCESSING, bytes = sizeBytes, progress = 0.02f, content = "2%")
         if (rootService.exists(dst) && sizeBytes == r?.getDataBytes()) {
-            t.updateInfo(state = OperationState.SKIP)
+            t.updateInfo(state = OperationState.SKIP, progress = 1f, content = "100%")
             out.add(log { "Data has not changed." })
         } else {
-            // Compress and test.
-            Tar.compress(
-                exclusionList = listOf(),
-                h = if (context.readFollowSymlinks().first()) "-h" else "",
-                srcDir = srcDir,
-                src = PathUtil.getFileName(src),// the name is not always the actual file name of the source,but the src does contain
-                dst = dst,
-                extra = ct.getCompressPara(context.readCompressionLevel().first())
-            ).also { result ->
-                isSuccess = result.isSuccess
-                out.addAll(result.out)
-            }
-            commonBackupUtil.testArchive(src = dst, ct = ct).also { result ->
-                isSuccess = isSuccess && result.isSuccess
-                out.addAll(result.out)
-                if (result.isSuccess) {
-                    m.setDataBytes(sizeBytes)
-                    m.setDisplayBytes(rootService.calculateSize(dst))
+            // Monitor compression progress in real time.
+            var isCompressing = true
+            val monitorJob = CoroutineScope(coroutineContext).launch {
+                while (isCompressing) {
+                    delay(500)
+                    if (!isCompressing) break
+                    val curDstSize = rootService.calculateSize(dst)
+                    if (curDstSize > 0 && sizeBytes > 0) {
+                        val expectedDstSize = (sizeBytes * 0.9f).coerceAtLeast(1f)
+                        val p = (curDstSize.toFloat() / expectedDstSize).coerceIn(0.02f, 0.95f)
+                        val pct = (p * 100).toInt()
+                        t.updateInfo(progress = p, content = "$pct%")
+                    }
                 }
+            }
+
+            try {
+                // Compress and test.
+                Tar.compress(
+                    exclusionList = listOf(),
+                    h = if (context.readFollowSymlinks().first()) "-h" else "",
+                    srcDir = srcDir,
+                    src = PathUtil.getFileName(src),// the name is not always the actual file name of the source,but the src does contain
+                    dst = dst,
+                    extra = ct.getCompressPara(context.readCompressionLevel().first())
+                ).also { result ->
+                    isSuccess = result.isSuccess
+                    out.addAll(result.out)
+                }
+                commonBackupUtil.testArchive(src = dst, ct = ct).also { result ->
+                    isSuccess = isSuccess && result.isSuccess
+                    out.addAll(result.out)
+                    if (result.isSuccess) {
+                        m.setDataBytes(sizeBytes)
+                        m.setDisplayBytes(rootService.calculateSize(dst))
+                    }
+                }
+            } finally {
+                isCompressing = false
+                monitorJob.cancel()
             }
         }
 
-        t.updateInfo(state = if (isSuccess) OperationState.DONE else OperationState.ERROR, log = out.toLineString())
+        t.updateInfo(
+            state = if (isSuccess) OperationState.DONE else OperationState.ERROR,
+            progress = if (isSuccess) 1f else 0f,
+            content = if (isSuccess) "100%" else "",
+            log = out.toLineString()
+        )
 
         ShellResult(code = if (isSuccess) 0 else -1, input = listOf(), out = out)
     }
@@ -130,7 +158,7 @@ class MediumBackupUtil @Inject constructor(
         with(CoroutineScope(coroutineContext)) {
             launch {
                 while (flag) {
-                    t.updateInfo(content = "${(progress * 100).toInt()}%")
+                    t.updateInfo(content = "${(progress * 100).toInt()}%", progress = progress)
                     delay(500)
                 }
             }
@@ -138,7 +166,7 @@ class MediumBackupUtil @Inject constructor(
 
         cloudRepository.upload(client = client, src = src, dstDir = dstDir, onUploading = { read, total -> progress = read.toFloat() / total }).apply {
             flag = false
-            t.updateInfo(state = if (isSuccess) OperationState.DONE else OperationState.ERROR, log = t.getLog() + "\n${outString}", content = "100%")
+            t.updateInfo(state = if (isSuccess) OperationState.DONE else OperationState.ERROR, log = t.getLog() + "\n${outString}", content = "100%", progress = 1f)
         }
     }
 }

@@ -113,6 +113,7 @@ class PackagesBackupUtil @Inject constructor(
         bytes: Long? = null,
         log: String? = null,
         content: String? = null,
+        progress: Float? = null,
     ) = run {
         when (dataType) {
             DataType.PACKAGE_APK -> {
@@ -121,6 +122,7 @@ class PackagesBackupUtil @Inject constructor(
                     if (bytes != null) it.bytes = bytes
                     if (log != null) it.log = log
                     if (content != null) it.content = content
+                    if (progress != null) it.progress = progress
                 }
             }
 
@@ -130,6 +132,7 @@ class PackagesBackupUtil @Inject constructor(
                     if (bytes != null) it.bytes = bytes
                     if (log != null) it.log = log
                     if (content != null) it.content = content
+                    if (progress != null) it.progress = progress
                 }
             }
 
@@ -139,6 +142,7 @@ class PackagesBackupUtil @Inject constructor(
                     if (bytes != null) it.bytes = bytes
                     if (log != null) it.log = log
                     if (content != null) it.content = content
+                    if (progress != null) it.progress = progress
                 }
             }
 
@@ -148,6 +152,7 @@ class PackagesBackupUtil @Inject constructor(
                     if (bytes != null) it.bytes = bytes
                     if (log != null) it.log = log
                     if (content != null) it.content = content
+                    if (progress != null) it.progress = progress
                 }
             }
 
@@ -157,6 +162,7 @@ class PackagesBackupUtil @Inject constructor(
                     if (bytes != null) it.bytes = bytes
                     if (log != null) it.log = log
                     if (content != null) it.content = content
+                    if (progress != null) it.progress = progress
                 }
             }
 
@@ -166,6 +172,7 @@ class PackagesBackupUtil @Inject constructor(
                     if (bytes != null) it.bytes = bytes
                     if (log != null) it.log = log
                     if (content != null) it.content = content
+                    if (progress != null) it.progress = progress
                 }
             }
 
@@ -232,35 +239,60 @@ class PackagesBackupUtil @Inject constructor(
 
         if (p.getDataSelected(dataType).not()) {
             isSuccess = true
-            t.updateInfo(dataType = dataType, state = OperationState.SKIP)
+            t.updateInfo(dataType = dataType, state = OperationState.SKIP, progress = 1f, content = "100%")
         } else {
             if (srcDir.isNotEmpty()) {
                 val sizeBytes = rootService.calculateSize(srcDir)
-                t.updateInfo(dataType = dataType, state = OperationState.PROCESSING, bytes = sizeBytes)
+                t.updateInfo(dataType = dataType, state = OperationState.PROCESSING, bytes = sizeBytes, progress = 0.05f, content = "5%")
                 if (rootService.exists(dst) && sizeBytes == r?.getDataBytes(dataType)) {
                     isSuccess = true
-                    t.updateInfo(dataType = dataType, state = OperationState.SKIP)
+                    t.updateInfo(dataType = dataType, state = OperationState.SKIP, progress = 1f, content = "100%")
                     out.add(log { "Data has not changed." })
                 } else {
-                    Tar.compressInCur(cur = srcDir, src = "./*.apk", dst = dst, extra = ct.getCompressPara(context.readCompressionLevel().first()))
-                        .also { result ->
-                            isSuccess = result.isSuccess
+                    var isCompressing = true
+                    val monitorJob = CoroutineScope(coroutineContext).launch {
+                        while (isCompressing) {
+                            delay(500)
+                            if (!isCompressing) break
+                            val curDstSize = rootService.calculateSize(dst)
+                            if (curDstSize > 0 && sizeBytes > 0) {
+                                val p = (curDstSize.toFloat() / sizeBytes.toFloat()).coerceIn(0.05f, 0.95f)
+                                val pct = (p * 100).toInt()
+                                t.updateInfo(dataType = dataType, progress = p, content = "$pct%")
+                            }
+                        }
+                    }
+
+                    try {
+                        Tar.compressInCur(cur = srcDir, src = "./*.apk", dst = dst, extra = ct.getCompressPara(context.readCompressionLevel().first()))
+                            .also { result ->
+                                isSuccess = result.isSuccess
+                                out.addAll(result.out)
+                            }
+                        commonBackupUtil.testArchive(src = dst, ct = ct).also { result ->
+                            isSuccess = isSuccess && result.isSuccess
                             out.addAll(result.out)
+                            if (result.isSuccess) {
+                                p.setDataBytes(dataType, sizeBytes)
+                                p.setDisplayBytes(dataType, rootService.calculateSize(dst))
+                            }
                         }
-                    commonBackupUtil.testArchive(src = dst, ct = ct).also { result ->
-                        isSuccess = isSuccess && result.isSuccess
-                        out.addAll(result.out)
-                        if (result.isSuccess) {
-                            p.setDataBytes(dataType, sizeBytes)
-                            p.setDisplayBytes(dataType, rootService.calculateSize(dst))
-                        }
+                    } finally {
+                        isCompressing = false
+                        monitorJob.cancel()
                     }
                 }
             } else {
                 isSuccess = false
                 out.add(log { "Failed to get apk path of $packageName." })
             }
-            t.updateInfo(dataType = dataType, state = if (isSuccess) OperationState.DONE else OperationState.ERROR, log = out.toLineString())
+            t.updateInfo(
+                dataType = dataType,
+                state = if (isSuccess) OperationState.DONE else OperationState.ERROR,
+                progress = if (isSuccess) 1f else 0f,
+                content = if (isSuccess) "100%" else "",
+                log = out.toLineString()
+            )
         }
 
         ShellResult(code = if (isSuccess) 0 else -1, input = listOf(), out = out)
@@ -323,35 +355,62 @@ class PackagesBackupUtil @Inject constructor(
             log { "ExclusionList: $exclusionList." }
 
             val sizeBytes = rootService.calculateSize(src)
-            t.updateInfo(dataType = dataType, state = OperationState.PROCESSING, bytes = sizeBytes)
+            t.updateInfo(dataType = dataType, state = OperationState.PROCESSING, bytes = sizeBytes, progress = 0.05f, content = "5%")
             if (rootService.exists(dst) && sizeBytes == r?.getDataBytes(dataType)) {
                 isSuccess = true
-                t.updateInfo(dataType = dataType, state = OperationState.SKIP)
+                t.updateInfo(dataType = dataType, state = OperationState.SKIP, progress = 1f, content = "100%")
                 out.add(log { "Data has not changed." })
             } else {
-                // Compress and test.
-                Tar.compress(
-                    exclusionList = exclusionList,
-                    h = if (context.readFollowSymlinks().first()) "-h" else "",
-                    srcDir = srcDir,
-                    src = packageName,
-                    dst = dst,
-                    extra = ct.getCompressPara(context.readCompressionLevel().first())
-                ).also { result ->
-                    isSuccess = result.isSuccess
-                    out.addAll(result.out)
-                }
-                commonBackupUtil.testArchive(src = dst, ct = ct).also { result ->
-                    isSuccess = isSuccess && result.isSuccess
-                    out.addAll(result.out)
-                    if (result.isSuccess) {
-                        p.setDataBytes(dataType, sizeBytes)
-                        p.setDisplayBytes(dataType, rootService.calculateSize(dst))
+                var isCompressing = true
+                val monitorJob = CoroutineScope(coroutineContext).launch {
+                    while (isCompressing) {
+                        delay(500)
+                        if (!isCompressing) break
+                        val curDstSize = rootService.calculateSize(dst)
+                        if (curDstSize > 0 && sizeBytes > 0) {
+                            val expectedRatio = if (dataType == DataType.PACKAGE_MEDIA) 0.9f else 0.75f
+                            val expectedDstSize = (sizeBytes * expectedRatio).coerceAtLeast(1f)
+                            val p = (curDstSize.toFloat() / expectedDstSize).coerceIn(0.05f, 0.95f)
+                            val pct = (p * 100).toInt()
+                            t.updateInfo(dataType = dataType, progress = p, content = "$pct%")
+                        }
                     }
+                }
+
+                try {
+                    // Compress and test.
+                    Tar.compress(
+                        exclusionList = exclusionList,
+                        h = if (context.readFollowSymlinks().first()) "-h" else "",
+                        srcDir = srcDir,
+                        src = packageName,
+                        dst = dst,
+                        extra = ct.getCompressPara(context.readCompressionLevel().first())
+                    ).also { result ->
+                        isSuccess = result.isSuccess
+                        out.addAll(result.out)
+                    }
+                    commonBackupUtil.testArchive(src = dst, ct = ct).also { result ->
+                        isSuccess = isSuccess && result.isSuccess
+                        out.addAll(result.out)
+                        if (result.isSuccess) {
+                            p.setDataBytes(dataType, sizeBytes)
+                            p.setDisplayBytes(dataType, rootService.calculateSize(dst))
+                        }
+                    }
+                } finally {
+                    isCompressing = false
+                    monitorJob.cancel()
                 }
             }
 
-            t.updateInfo(dataType = dataType, state = if (isSuccess) OperationState.DONE else OperationState.ERROR, log = out.toLineString())
+            t.updateInfo(
+                dataType = dataType,
+                state = if (isSuccess) OperationState.DONE else OperationState.ERROR,
+                progress = if (isSuccess) 1f else 0f,
+                content = if (isSuccess) "100%" else "",
+                log = out.toLineString()
+            )
         }
 
         ShellResult(code = if (isSuccess) 0 else -1, input = listOf(), out = out)
@@ -396,7 +455,7 @@ class PackagesBackupUtil @Inject constructor(
         with(CoroutineScope(coroutineContext)) {
             launch {
                 while (flag) {
-                    t.updateInfo(dataType = dataType, content = "${(progress * 100).toInt()}%")
+                    t.updateInfo(dataType = dataType, content = "${(progress * 100).toInt()}%", progress = progress)
                     delay(500)
                 }
             }
@@ -404,7 +463,7 @@ class PackagesBackupUtil @Inject constructor(
 
         cloudRepository.upload(client = client, src = src, dstDir = dstDir, onUploading = { read, total -> progress = read.toFloat() / total }).apply {
             flag = false
-            t.updateInfo(dataType = dataType, state = if (isSuccess) OperationState.DONE else OperationState.ERROR, log = t.getLog(dataType) + "\n${outString}", content = "100%")
+            t.updateInfo(dataType = dataType, state = if (isSuccess) OperationState.DONE else OperationState.ERROR, log = t.getLog(dataType) + "\n${outString}", content = "100%", progress = 1f)
         }
     }
 }

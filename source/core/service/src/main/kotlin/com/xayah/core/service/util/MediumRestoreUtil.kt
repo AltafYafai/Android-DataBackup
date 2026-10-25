@@ -49,12 +49,14 @@ class MediumRestoreUtil @Inject constructor(
         bytes: Long? = null,
         log: String? = null,
         content: String? = null,
+        progress: Float? = null,
     ) = run {
         mediaInfo.also {
             if (state != null) it.state = state
             if (bytes != null) it.bytes = bytes
             if (log != null) it.log = log
             if (content != null) it.content = content
+            if (progress != null) it.progress = progress
         }
         taskDao.upsert(this)
     }
@@ -72,27 +74,51 @@ class MediumRestoreUtil @Inject constructor(
         // Return if the archive doesn't exist.
         if (rootService.exists(src)) {
             val sizeBytes = rootService.calculateSize(src)
-            t.updateInfo(state = OperationState.PROCESSING, bytes = sizeBytes)
+            t.updateInfo(state = OperationState.PROCESSING, bytes = sizeBytes, progress = 0.05f, content = "5%")
 
-            // Decompress the archive.
-            Tar.decompress(
-                exclusionList = listOf(),
-                clear = if (context.readCleanRestoring().first()) "--recursive-unlink" else "",
-                m = false,
-                src = src,
-                dst = dstDir,
-                extra = ct.decompressPara
-            ).also { result ->
-                isSuccess = result.isSuccess
-                out.addAll(result.out)
+            var isDecompressing = true
+            val monitorJob = CoroutineScope(coroutineContext).launch {
+                while (isDecompressing) {
+                    delay(600)
+                    if (!isDecompressing) break
+                    val curDstSize = rootService.calculateSize(dst)
+                    if (curDstSize > 0 && sizeBytes > 0) {
+                        val p = (curDstSize.toFloat() / sizeBytes.toFloat()).coerceIn(0.05f, 0.95f)
+                        val pct = (p * 100).toInt()
+                        t.updateInfo(progress = p, content = "$pct%")
+                    }
+                }
+            }
+
+            try {
+                // Decompress the archive.
+                Tar.decompress(
+                    exclusionList = listOf(),
+                    clear = if (context.readCleanRestoring().first()) "--recursive-unlink" else "",
+                    m = false,
+                    src = src,
+                    dst = dstDir,
+                    extra = ct.decompressPara
+                ).also { result ->
+                    isSuccess = result.isSuccess
+                    out.addAll(result.out)
+                }
+            } finally {
+                isDecompressing = false
+                monitorJob.cancel()
             }
         } else {
             isSuccess = false
             out.add(log { "Not exist: $src" })
-            t.updateInfo(state = OperationState.ERROR, log = out.toLineString())
+            t.updateInfo(state = OperationState.ERROR, progress = 0f, log = out.toLineString())
             return@run ShellResult(code = -1, input = listOf(), out = out)
         }
-        t.updateInfo(state = if (isSuccess) OperationState.DONE else OperationState.ERROR, log = out.toLineString())
+        t.updateInfo(
+            state = if (isSuccess) OperationState.DONE else OperationState.ERROR,
+            progress = if (isSuccess) 1f else 0f,
+            content = if (isSuccess) "100%" else "",
+            log = out.toLineString()
+        )
 
         ShellResult(code = if (isSuccess) 0 else -1, input = listOf(), out = out)
     }

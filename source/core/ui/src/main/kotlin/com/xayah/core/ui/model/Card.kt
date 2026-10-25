@@ -8,6 +8,7 @@ data class ProcessingCardItem(
     val title: String = "",
     val content: String = "",
     val log: String = "",
+    val bytes: Long = 0,
 )
 
 data class ProcessingDataCardItem(

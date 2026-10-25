@@ -83,6 +83,7 @@ class PackagesRestoreUtil @Inject constructor(
         bytes: Long? = null,
         log: String? = null,
         content: String? = null,
+        progress: Float? = null,
     ) = run {
         when (dataType) {
             DataType.PACKAGE_APK -> {
@@ -91,6 +92,7 @@ class PackagesRestoreUtil @Inject constructor(
                     if (bytes != null) it.bytes = bytes
                     if (log != null) it.log = log
                     if (content != null) it.content = content
+                    if (progress != null) it.progress = progress
                 }
             }
 
@@ -100,6 +102,7 @@ class PackagesRestoreUtil @Inject constructor(
                     if (bytes != null) it.bytes = bytes
                     if (log != null) it.log = log
                     if (content != null) it.content = content
+                    if (progress != null) it.progress = progress
                 }
             }
 
@@ -109,6 +112,7 @@ class PackagesRestoreUtil @Inject constructor(
                     if (bytes != null) it.bytes = bytes
                     if (log != null) it.log = log
                     if (content != null) it.content = content
+                    if (progress != null) it.progress = progress
                 }
             }
 
@@ -118,6 +122,7 @@ class PackagesRestoreUtil @Inject constructor(
                     if (bytes != null) it.bytes = bytes
                     if (log != null) it.log = log
                     if (content != null) it.content = content
+                    if (progress != null) it.progress = progress
                 }
             }
 
@@ -127,6 +132,7 @@ class PackagesRestoreUtil @Inject constructor(
                     if (bytes != null) it.bytes = bytes
                     if (log != null) it.log = log
                     if (content != null) it.content = content
+                    if (progress != null) it.progress = progress
                 }
             }
 
@@ -136,6 +142,7 @@ class PackagesRestoreUtil @Inject constructor(
                     if (bytes != null) it.bytes = bytes
                     if (log != null) it.log = log
                     if (content != null) it.content = content
+                    if (progress != null) it.progress = progress
                 }
             }
 
@@ -167,12 +174,12 @@ class PackagesRestoreUtil @Inject constructor(
         val out = mutableListOf<String>()
 
         if (p.getDataSelected(dataType).not()) {
-            t.updateInfo(dataType = dataType, state = OperationState.SKIP)
+            t.updateInfo(dataType = dataType, state = OperationState.SKIP, progress = 1f, content = "100%")
         } else {
             // Return if the archive doesn't exist.
             if (rootService.exists(src)) {
                 val sizeBytes = rootService.calculateSize(src)
-                t.updateInfo(dataType = dataType, state = OperationState.PROCESSING, bytes = sizeBytes)
+                t.updateInfo(dataType = dataType, state = OperationState.PROCESSING, bytes = sizeBytes, progress = 0.05f, content = "5%")
                 // Decompress apk archive
                 val tmpApkPath = pathUtil.getTmpApkPath(packageName = packageName)
                 rootService.deleteRecursively(tmpApkPath)
@@ -181,6 +188,8 @@ class PackagesRestoreUtil @Inject constructor(
                     isSuccess = result.isSuccess
                     out.addAll(result.out)
                 }
+
+                t.updateInfo(dataType = dataType, progress = 0.5f, content = "50%")
 
                 // Install apks
                 rootService.listFilePaths(tmpApkPath).also { apksPath ->
@@ -237,7 +246,13 @@ class PackagesRestoreUtil @Inject constructor(
                 isSuccess = false
                 out.add(log { "Not exist: $src" })
             }
-            t.updateInfo(dataType = dataType, state = if (isSuccess) OperationState.DONE else OperationState.ERROR, log = out.toLineString())
+            t.updateInfo(
+                dataType = dataType,
+                state = if (isSuccess) OperationState.DONE else OperationState.ERROR,
+                progress = if (isSuccess) 1f else 0f,
+                content = if (isSuccess) "100%" else "",
+                log = out.toLineString()
+            )
         }
 
         ShellResult(code = if (isSuccess) 0 else -1, input = listOf(), out = out)
@@ -259,7 +274,7 @@ class PackagesRestoreUtil @Inject constructor(
         val out = mutableListOf<String>()
 
         if (p.getDataSelected(dataType).not()) {
-            t.updateInfo(dataType = dataType, state = OperationState.SKIP)
+            t.updateInfo(dataType = dataType, state = OperationState.SKIP, progress = 1f, content = "100%")
         } else {
             if (uid == -1) {
                 isSuccess = false
@@ -268,7 +283,7 @@ class PackagesRestoreUtil @Inject constructor(
                 // Return if the archive doesn't exist.
                 if (rootService.exists(src)) {
                     val sizeBytes = rootService.calculateSize(src)
-                    t.updateInfo(dataType = dataType, state = OperationState.PROCESSING, bytes = sizeBytes)
+                    t.updateInfo(dataType = dataType, state = OperationState.PROCESSING, bytes = sizeBytes, progress = 0.05f, content = "5%")
                     // Generate exclusion items.
                     val exclusionList = mutableListOf<String>()
                     when (dataType) {
@@ -295,17 +310,36 @@ class PackagesRestoreUtil @Inject constructor(
 
                     log { "Original SELinux context: $pathContext." }
 
-                    // Decompress the archive.
-                    Tar.decompress(
-                        exclusionList = exclusionList,
-                        clear = if (context.readCleanRestoring().first()) "--recursive-unlink" else "",
-                        m = true,
-                        src = src,
-                        dst = dstDir,
-                        extra = ct.decompressPara
-                    ).also { result ->
-                        isSuccess = result.isSuccess
-                        out.addAll(result.out)
+                    var isDecompressing = true
+                    val monitorJob = CoroutineScope(coroutineContext).launch {
+                        while (isDecompressing) {
+                            delay(600)
+                            if (!isDecompressing) break
+                            val curDstSize = rootService.calculateSize(dst)
+                            if (curDstSize > 0 && sizeBytes > 0) {
+                                val p = (curDstSize.toFloat() / sizeBytes.toFloat()).coerceIn(0.05f, 0.95f)
+                                val pct = (p * 100).toInt()
+                                t.updateInfo(dataType = dataType, progress = p, content = "$pct%")
+                            }
+                        }
+                    }
+
+                    try {
+                        // Decompress the archive.
+                        Tar.decompress(
+                            exclusionList = exclusionList,
+                            clear = if (context.readCleanRestoring().first()) "--recursive-unlink" else "",
+                            m = true,
+                            src = src,
+                            dst = dstDir,
+                            extra = ct.decompressPara
+                        ).also { result ->
+                            isSuccess = result.isSuccess
+                            out.addAll(result.out)
+                        }
+                    } finally {
+                        isDecompressing = false
+                        monitorJob.cancel()
                     }
 
                     // Restore SELinux context.
@@ -343,16 +377,22 @@ class PackagesRestoreUtil @Inject constructor(
                     if (dataType == DataType.PACKAGE_USER) {
                         isSuccess = false
                         out.add(log { "Not exist: $src" })
-                        t.updateInfo(dataType = dataType, state = OperationState.ERROR, log = out.toLineString())
+                        t.updateInfo(dataType = dataType, state = OperationState.ERROR, progress = 0f, log = out.toLineString())
                         return@run ShellResult(code = -1, input = listOf(), out = out)
                     } else {
                         out.add(log { "Not exist and skip: $src" })
-                        t.updateInfo(dataType = dataType, state = OperationState.SKIP, log = out.toLineString())
+                        t.updateInfo(dataType = dataType, state = OperationState.SKIP, progress = 1f, content = "100%", log = out.toLineString())
                         return@run ShellResult(code = -2, input = listOf(), out = out)
                     }
                 }
             }
-            t.updateInfo(dataType = dataType, state = if (isSuccess) OperationState.DONE else OperationState.ERROR, log = out.toLineString())
+            t.updateInfo(
+                dataType = dataType,
+                state = if (isSuccess) OperationState.DONE else OperationState.ERROR,
+                progress = if (isSuccess) 1f else 0f,
+                content = if (isSuccess) "100%" else "",
+                log = out.toLineString()
+            )
         }
 
         ShellResult(code = if (isSuccess) 0 else -1, input = listOf(), out = out)

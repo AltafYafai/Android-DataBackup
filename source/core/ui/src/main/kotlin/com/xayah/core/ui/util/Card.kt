@@ -85,7 +85,8 @@ val Info.toProcessingCardItem: ProcessingCardItem
             progress = progress,
             title = title,
             log = log,
-            content = content
+            content = content,
+            bytes = bytes,
         )
     }
 
@@ -96,7 +97,8 @@ val ProcessingInfoEntity.toProcessingCardItem: ProcessingCardItem
             progress = progress,
             title = title,
             log = log,
-            content = content
+            content = content,
+            bytes = bytes,
         )
     }
 

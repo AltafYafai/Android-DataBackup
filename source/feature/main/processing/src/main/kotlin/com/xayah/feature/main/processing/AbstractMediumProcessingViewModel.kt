@@ -29,6 +29,9 @@ abstract class AbstractMediumProcessingViewModel(
             .map { medium ->
                 val items = mutableListOf<ProcessingDataCardItem>()
                 medium.map {
+                    val fallbackBytes = if (it.mediaInfo.bytes > 0) it.mediaInfo.bytes
+                    else if (it.mediaEntity.mediaInfo.displayBytes > 0) it.mediaEntity.mediaInfo.displayBytes
+                    else it.mediaEntity.mediaInfo.dataBytes
                     items.add(
                         ProcessingDataCardItem(
                             title = it.mediaEntity.name,
@@ -37,7 +40,7 @@ abstract class AbstractMediumProcessingViewModel(
                             processingIndex = it.processingIndex,
                             progress = it.mediaInfo.progress,
                             items = listOf(
-                                it.mediaInfo.toProcessingCardItem,
+                                it.mediaInfo.toProcessingCardItem.copy(bytes = fallbackBytes),
                             )
                         )
                     )

@@ -296,7 +296,10 @@ fun PageProcessing(
                                 activeStreamTitle = activeSub?.title ?: ""
                                 subtitle = activeSub?.let { it.title + if (it.content.isEmpty()) "" else " (${it.content})" }
                                     ?: stringResource(id = R.string.necessary_remaining_data_processing)
-                                segmentProgress = item.progress
+                                val subP = activeSub?.progress ?: -1f
+                                val parsedP = activeSub?.content?.trimEnd('%')?.toFloatOrNull()?.let { it / 100f } ?: -1f
+                                val computedStreamP = if (subP > 0f) subP else if (parsedP > 0f) parsedP else item.progress
+                                segmentProgress = if (computedStreamP > 0f) computedStreamP else 0.05f
                                 partitions = item.items
                                 activePartitionIndex = index
                                 telemetryStats = activeSub?.content?.ifEmpty { null } ?: item.key
@@ -369,10 +372,9 @@ fun PageProcessing(
                                 expanded = expanded,
                                 items = item.items,
                                 processingIndex = item.processingIndex,
+                                progress = item.progress,
                                 onActionBarClick = {
-                                    if (uiState.state == OperationState.DONE) {
-                                        expanded = expanded.not()
-                                    }
+                                    expanded = expanded.not()
                                 }
                             )
                         }

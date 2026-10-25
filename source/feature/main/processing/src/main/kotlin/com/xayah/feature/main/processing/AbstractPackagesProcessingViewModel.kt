@@ -33,6 +33,11 @@ abstract class AbstractPackagesProcessingViewModel(
             .map { packages ->
                 val items = mutableListOf<ProcessingDataCardItem>()
                 packages.map {
+                    val displayStats = it.packageEntity.displayStats
+                    val dataStats = it.packageEntity.dataStats
+                    fun getFallbackBytes(bytes: Long, displayBytes: Long, dataBytes: Long): Long {
+                        return if (bytes > 0) bytes else if (displayBytes > 0) displayBytes else dataBytes
+                    }
                     items.add(
                         ProcessingDataCardItem(
                             title = it.packageEntity.packageInfo.label,
@@ -41,12 +46,24 @@ abstract class AbstractPackagesProcessingViewModel(
                             processingIndex = it.processingIndex,
                             progress = (it.apkInfo.progress + it.userInfo.progress + it.userDeInfo.progress + it.dataInfo.progress + it.obbInfo.progress + it.mediaInfo.progress) / 6,
                             items = listOf(
-                                it.apkInfo.toProcessingCardItem,
-                                it.userInfo.toProcessingCardItem,
-                                it.userDeInfo.toProcessingCardItem,
-                                it.dataInfo.toProcessingCardItem,
-                                it.obbInfo.toProcessingCardItem,
-                                it.mediaInfo.toProcessingCardItem,
+                                it.apkInfo.toProcessingCardItem.let { card ->
+                                    card.copy(bytes = getFallbackBytes(card.bytes, displayStats.apkBytes, dataStats.apkBytes))
+                                },
+                                it.userInfo.toProcessingCardItem.let { card ->
+                                    card.copy(bytes = getFallbackBytes(card.bytes, displayStats.userBytes, dataStats.userBytes))
+                                },
+                                it.userDeInfo.toProcessingCardItem.let { card ->
+                                    card.copy(bytes = getFallbackBytes(card.bytes, displayStats.userDeBytes, dataStats.userDeBytes))
+                                },
+                                it.dataInfo.toProcessingCardItem.let { card ->
+                                    card.copy(bytes = getFallbackBytes(card.bytes, displayStats.dataBytes, dataStats.dataBytes))
+                                },
+                                it.obbInfo.toProcessingCardItem.let { card ->
+                                    card.copy(bytes = getFallbackBytes(card.bytes, displayStats.obbBytes, dataStats.obbBytes))
+                                },
+                                it.mediaInfo.toProcessingCardItem.let { card ->
+                                    card.copy(bytes = getFallbackBytes(card.bytes, displayStats.mediaBytes, dataStats.mediaBytes))
+                                },
                             )
                         )
                     )
