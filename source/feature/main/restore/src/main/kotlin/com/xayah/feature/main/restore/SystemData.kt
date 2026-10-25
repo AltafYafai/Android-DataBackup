@@ -982,20 +982,22 @@ private fun WifiPasswordViewerDialog(
                                         }
                                     }
 
+                                    val password = net.password
                                     Spacer(modifier = Modifier.height(2.dp))
                                     Text(
-                                        text = net.password ?: "(Open / No Password)",
+                                        text = password ?: "(Open / No Password)",
                                         style = MaterialTheme.typography.bodySmall,
-                                        fontWeight = if (net.password != null) FontWeight.Medium else FontWeight.Normal,
-                                        color = if (net.password != null) ThemedColorSchemeKeyTokens.Primary.value else ThemedColorSchemeKeyTokens.Outline.value,
+                                        fontWeight = if (password != null) FontWeight.Medium else FontWeight.Normal,
+                                        color = if (password != null) ThemedColorSchemeKeyTokens.Primary.value else ThemedColorSchemeKeyTokens.Outline.value,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis
                                     )
                                 }
 
-                                if (net.password != null) {
+                                val password = net.password
+                                if (password != null) {
                                     IconButton(
-                                        onClick = { onCopyPassword(net.password) },
+                                        onClick = { onCopyPassword(password) },
                                         modifier = Modifier.size(32.dp)
                                     ) {
                                         Icon(
