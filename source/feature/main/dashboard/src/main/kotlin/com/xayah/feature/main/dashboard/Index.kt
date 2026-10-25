@@ -68,6 +68,7 @@ fun PageDashboard() {
     val backedUpAppsCount by viewModel.backedUpAppsCountState.collectAsStateWithLifecycle()
     val filesCount by viewModel.filesCountState.collectAsStateWithLifecycle()
     val backedUpFilesCount by viewModel.backedUpFilesCountState.collectAsStateWithLifecycle()
+    val rootInfo by viewModel.rootInfoState.collectAsStateWithLifecycle()
     val dialogState = LocalSlotScope.current!!.dialogSlot
     val scope = rememberCoroutineScope()
 
@@ -131,6 +132,7 @@ fun PageDashboard() {
                 backedUpAppsCount = backedUpAppsCount,
                 filesCount = filesCount,
                 backedUpFilesCount = backedUpFilesCount,
+                rootInfo = rootInfo,
             ) {
                 if (nullBackupDir) {
                     navController.navigateSingle(MainRoutes.Directory.route)

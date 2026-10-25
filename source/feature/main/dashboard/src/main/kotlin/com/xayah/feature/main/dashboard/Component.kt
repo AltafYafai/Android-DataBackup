@@ -46,6 +46,7 @@ import com.xayah.core.ui.component.SegmentProgressIndicator
 import com.xayah.core.ui.component.TitleLargeText
 import com.xayah.core.ui.component.TitleMediumText
 import com.xayah.core.ui.component.paddingBottom
+import com.xayah.core.ui.component.paddingHorizontal
 import com.xayah.core.ui.component.paddingTop
 import com.xayah.core.ui.model.SegmentProgress
 import com.xayah.core.ui.theme.ThemedColorSchemeKeyTokens
@@ -53,6 +54,7 @@ import com.xayah.core.ui.theme.value
 import com.xayah.core.ui.theme.withState
 import com.xayah.core.ui.token.SizeTokens
 import com.xayah.core.util.DateUtil
+import com.xayah.core.util.command.RootInfo
 
 @SuppressLint("StringFormatInvalid")
 @ExperimentalMaterial3Api
@@ -248,12 +250,14 @@ fun DashboardActionTile(
 
 @Composable
 fun DashboardHeroStatusCard(
+    modifier: Modifier = Modifier,
     nullBackupDir: Boolean,
     lastBackupTime: Long,
     appsCount: Long,
     backedUpAppsCount: Long,
     filesCount: Long,
     backedUpFilesCount: Long,
+    rootInfo: RootInfo = RootInfo(),
     onStatusClick: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -271,7 +275,9 @@ fun DashboardHeroStatusCard(
     val isProtected = !nullBackupDir && lastBackupTime > 0L
 
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .paddingHorizontal(SizeTokens.Level16),
         shape = RoundedCornerShape(28.dp),
         color = ThemedColorSchemeKeyTokens.SurfaceContainerHigh.value,
         tonalElevation = SizeTokens.Level2,
@@ -326,6 +332,35 @@ fun DashboardHeroStatusCard(
                             color = if (isProtected) ThemedColorSchemeKeyTokens.OnPrimaryContainer.value else ThemedColorSchemeKeyTokens.OnErrorContainer.value
                         )
                     }
+                }
+            }
+
+            // Root Status and Method Pill
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = if (rootInfo.isRootGranted) ThemedColorSchemeKeyTokens.SurfaceContainerLowest.value else ThemedColorSchemeKeyTokens.ErrorContainer.value.copy(alpha = 0.35f),
+                border = BorderStroke(Dp(1f), ThemedColorSchemeKeyTokens.OutlineVariant.value.copy(alpha = 0.35f)),
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Surface(
+                        modifier = Modifier.size(8.dp),
+                        shape = CircleShape,
+                        color = if (rootInfo.isRootGranted) ThemedColorSchemeKeyTokens.Primary.value else ThemedColorSchemeKeyTokens.Error.value
+                    ) {}
+                    Text(
+                        text = if (rootInfo.isRootGranted) {
+                            if (rootInfo.method.contains("Root", ignoreCase = true)) rootInfo.method else "Root: ${rootInfo.method}"
+                        } else {
+                            "Root: Not Granted"
+                        },
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (rootInfo.isRootGranted) ThemedColorSchemeKeyTokens.OnSurface.value else ThemedColorSchemeKeyTokens.OnErrorContainer.value
+                    )
                 }
             }
 
@@ -501,6 +536,7 @@ fun DashboardExpressiveActionCard(
 
 @Composable
 fun DashboardStorageCardExpressive(
+    modifier: Modifier = Modifier,
     title: String,
     used: SegmentProgress? = null,
     backupUsed: SegmentProgress? = null,
@@ -508,7 +544,9 @@ fun DashboardStorageCardExpressive(
 ) {
     val context = LocalContext.current
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .paddingHorizontal(SizeTokens.Level16),
         shape = RoundedCornerShape(24.dp),
         color = ThemedColorSchemeKeyTokens.SurfaceContainerLowest.value,
         tonalElevation = SizeTokens.Level2,

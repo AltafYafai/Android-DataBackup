@@ -16,11 +16,15 @@ import com.xayah.core.ui.viewmodel.BaseViewModel
 import com.xayah.core.ui.viewmodel.IndexUiEffect
 import com.xayah.core.ui.viewmodel.UiIntent
 import com.xayah.core.ui.viewmodel.UiState
+import com.xayah.core.util.command.RootInfo
+import com.xayah.core.util.command.RootUtil
 import com.xayah.core.util.toBrowser
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import javax.inject.Inject
 
 data class IndexUiState(
@@ -41,10 +45,19 @@ class IndexViewModel @Inject constructor(
     private val appsRepo: AppsRepo,
     private val filesRepo: FilesRepo,
 ) : BaseViewModel<IndexUiState, IndexUiIntent, IndexUiEffect>(IndexUiState(latestRelease = null)) {
+    init {
+        launchOnIO {
+            _rootInfoState.value = RootUtil.queryRootInfo()
+        }
+    }
+
     override suspend fun onEvent(state: IndexUiState, intent: IndexUiIntent) {
         when (intent) {
             is IndexUiIntent.Update -> {
                 directoryRepo.updateSelected()
+                launchOnIO {
+                    _rootInfoState.value = RootUtil.queryRootInfo()
+                }
 
                 runCatching {
                     val release = githubRepo.getLatestRelease()
@@ -66,6 +79,9 @@ class IndexViewModel @Inject constructor(
 
     private val _lastBackupTime: Flow<Long> = context.readLastBackupTime().flowOnIO()
     val lastBackupTimeState: StateFlow<Long> = _lastBackupTime.stateInScope(0)
+
+    private val _rootInfoState = MutableStateFlow(RootInfo())
+    val rootInfoState: StateFlow<RootInfo> = _rootInfoState.asStateFlow()
 
     private val _directory: Flow<DirectoryEntity?> = directoryRepo.querySelectedByDirectoryTypeFlow().flowOnIO()
     val directoryState: StateFlow<DirectoryEntity?> = _directory.stateInScope(null)
