@@ -92,20 +92,36 @@ def send_document(token, chat_id, file_path, caption="", custom_filename=None):
     filename = custom_filename or os.path.basename(file_path)
     cmd = [
         "curl", "-sS", "--max-time", "620",
-        "-F", f"chat_id={chat_id}",
-        "-F", "parse_mode=HTML",
-        "-F", f"caption={caption}",
+        "--form-string", f"chat_id={chat_id}",
+        "--form-string", "parse_mode=HTML",
+        "--form-string", f"caption={caption}",
         "-F", f"document=@{file_path};filename={filename}",
         f"https://api.telegram.org/bot{token}/sendDocument"
     ]
     try:
-        res = subprocess.run(cmd, capture_output=True, text=True, check=True)
-        resp_data = json.loads(res.stdout)
+        res = subprocess.run(cmd, capture_output=True, text=True)
+        resp_data = json.loads(res.stdout) if res.stdout else {}
         if resp_data.get("ok"):
             print(f"Document uploaded successfully: {file_path}")
             return True
         else:
             print(f"Telegram upload error response: {res.stdout}", file=sys.stderr)
+            # If HTML parsing failed, retry with stripped plain text caption
+            plain_caption = caption.replace("<b>", "").replace("</b>", "").replace("<i>", "").replace("</i>", "").replace("<code>", "").replace("</code>", "")
+            fallback_cmd = [
+                "curl", "-sS", "--max-time", "620",
+                "--form-string", f"chat_id={chat_id}",
+                "--form-string", f"caption={plain_caption}",
+                "-F", f"document=@{file_path};filename={filename}",
+                f"https://api.telegram.org/bot{token}/sendDocument"
+            ]
+            res2 = subprocess.run(fallback_cmd, capture_output=True, text=True)
+            resp2 = json.loads(res2.stdout) if res2.stdout else {}
+            if resp2.get("ok"):
+                print(f"Document uploaded successfully with fallback caption: {file_path}")
+                return True
+            else:
+                print(f"Fallback upload error: {res2.stdout}", file=sys.stderr)
     except Exception as e:
         print(f"Failed to upload document via curl: {e}", file=sys.stderr)
     return False
@@ -194,7 +210,10 @@ def on_success(apk_path=None):
             f"🕒 <b>Built at:</b> {now_utc}\n"
             f"🔗 <a href=\"{info['run_url']}\">View GitHub Actions Run</a>"
         )
-        send_document(token, chat_id, target_apk, caption=caption)
+        ok = send_document(token, chat_id, target_apk, caption=caption)
+        if not ok:
+            print("Failed to upload APK to Telegram", file=sys.stderr)
+            sys.exit(1)
     else:
         send_message(
             token, chat_id,
