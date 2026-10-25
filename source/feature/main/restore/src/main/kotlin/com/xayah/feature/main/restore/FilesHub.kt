@@ -3,6 +3,7 @@ package com.xayah.feature.main.restore
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -181,7 +182,7 @@ fun FilesHubScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = SizeTokens.Level16, vertical = SizeTokens.Level14),
+                        .padding(horizontal = SizeTokens.Level16, vertical = 14.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(SizeTokens.Level12)
                 ) {

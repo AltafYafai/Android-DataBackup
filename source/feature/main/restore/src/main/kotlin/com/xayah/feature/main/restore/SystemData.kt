@@ -576,7 +576,7 @@ fun SystemDataScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(SizeTokens.Level20),
-                    verticalArrangement = Arrangement.spacedBy(SizeTokens.Level14),
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     if (!processingCompleted) {
