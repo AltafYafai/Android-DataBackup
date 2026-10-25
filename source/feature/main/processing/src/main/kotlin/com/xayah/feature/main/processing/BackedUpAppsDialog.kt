@@ -46,6 +46,9 @@ import com.xayah.core.ui.theme.ThemedColorSchemeKeyTokens
 import com.xayah.core.ui.theme.value
 import com.xayah.core.ui.token.SizeTokens
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun BackedUpAppsDialog(
     isOpen: Boolean,
