@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <string name="welcome_to_use">أهلاً وسهلاً بك في تطبيق DataBackup</string>
+    <string name="welcome_to_use">أهلاً وسهلاً بك في تطبيق BackupVault</string>
     <string name="update_records">تحديث التسجيلات</string>
     <string name="environment_detection">التأكد من بيئة العمل</string>
     <string name="start">ابدأ</string>
@@ -87,7 +87,7 @@
     <string name="icon_reload_failed">فشل تحميل الأيقونة</string>
     <string name="user">المستخدم</string>
     <string name="backup">النسخ الاحتياطي</string>
-    <string name="backup_itself">نسخ تطبيق DataBackup</string>
+    <string name="backup_itself">نسخ تطبيق BackupVault</string>
     <string name="reset_backup_list">إعادة ضبط قائمة النسخ الاحتياطي</string>
     <string name="compatible_mode">وضع التوافق</string>
     <string name="follow_symlinks_desc">ضغط ونقل الملفات المشار إليها من قبل الرابط الرمزي للملف</string>
@@ -395,12 +395,12 @@
     <string name="restore_ssaid_desc">استعادة معرف Android للتطبيقات، ويحتاج إلى إعادة تشغيل فوري بعد الاستعادة لتصبح التغييرات فعالة</string>
     <string name="args_files_backed_up_and_failed">تم نسخ %1$s ملفات بنجاح، وفشل نسخ %2$s</string>
     <string name="args_files_restored_and_failed">تم استعادة %1$s ملفات بنجاح، وفشل استعادة %2$s</string>
-    <string name="welcome_screen_app_desc">استمتع بنسخ احتياطي خالٍ من التعقيدات مع DataBackup. إنه سهل الاستخدام ومفتوح المصدر بالكامل. احفظ بياناتك بأمان دون أي قلق.</string>
+    <string name="welcome_screen_app_desc">استمتع بنسخ احتياطي خالٍ من التعقيدات مع BackupVault. إنه سهل الاستخدام ومفتوح المصدر بالكامل. احفظ بياناتك بأمان دون أي قلق.</string>
     <string name="root_desc">يتيح لك هذا التطبيق إجراء نسخة احتياطية كاملة لجهازك، ويتطلب صلاحيات الروت (superuser) للوصول إلى ملفات النظام والإعدادات التي لا تستطيع التطبيقات العادية الوصول إليها</string>
     <string name="get_started">البدء</string>
     <string name="file">ملف</string>
     <string name="dismiss">تجاهل</string>
-    <string name="permissions_screen_desc">يحتاج DataBackup إلى الأذونات التالية ليعمل. في حال الرفض، قد لا تعمل بعض الوظائف بشكل صحيح.</string>
+    <string name="permissions_screen_desc">يحتاج BackupVault إلى الأذونات التالية ليعمل. في حال الرفض، قد لا تعمل بعض الوظائف بشكل صحيح.</string>
     <string name="back">رجوع</string>
     <string name="notification_desc">هذا مطلوب لإرسال الإشعارات الضرورية</string>
     <string name="permission_is_denied">تم رفض الإذن</string>

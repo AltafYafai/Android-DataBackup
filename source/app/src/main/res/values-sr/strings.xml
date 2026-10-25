@@ -71,7 +71,7 @@
     <string name="restore_user_desc">Kojeg korisnika želiš obnoviti?</string>
     <string name="restore_completed">Obnavljanje završeno</string>
     <string name="backup">Sigurnosna kopija</string>
-    <string name="backup_itself">Spremanje DataBackup aplikacije</string>
+    <string name="backup_itself">Spremanje BackupVault aplikacije</string>
     <string name="backup_itself_desc">Kopiraj APK datoteku u mapu sigurnosnih kopija nakon izrade sigurnosne kopije</string>
     <string name="compression_test">Test komprimiranja</string>
     <string name="compression_test_desc">Provjeri je li komprimirane arhiva isparvna nakon izrade</string>
@@ -271,7 +271,7 @@
     <string name="theme_dark_desc">Uvek tamni način</string>
     <string name="grant_ntfy_perm_manually">Ručno dodeli dozvolu za obavesti</string>
     <string name="app_name">BackupVault</string>
-    <string name="welcome_to_use">Добродошли у DataBackup</string>
+    <string name="welcome_to_use">Добродошли у BackupVault</string>
     <string name="update_records">Ажурирај записе</string>
     <string name="environment_detection">Препознавање окружења</string>
     <string name="start">Започни</string>

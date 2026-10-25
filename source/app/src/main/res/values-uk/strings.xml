@@ -63,7 +63,7 @@
     <string name="succeed">Успішно</string>
     <string name="word_return">Повернутися</string>
     <string name="time">Час</string>
-    <string name="welcome_to_use">Ласкаво просимо до DataBackup</string>
+    <string name="welcome_to_use">Ласкаво просимо до BackupVault</string>
     <string name="external_storage">Зовнішнє сховище</string>
     <string name="save_directory_structure">Зберегти структуру директорій</string>
     <string name="app_and_data">Додатки</string>
@@ -147,7 +147,7 @@
     <string name="system">Системні</string>
     <string name="compression_test_desc">Перевірити архіви на цілісність після стиснення</string>
     <string name="add">Додати</string>
-    <string name="backup_itself">Бекап DataBackup</string>
+    <string name="backup_itself">Бекап BackupVault</string>
     <string name="compression_test">Перевірка стиснення</string>
     <string name="selected_both">Вибрано обидва</string>
     <string name="follow_symlinks">Дотримуючись символічних посилань</string>
@@ -403,9 +403,9 @@
     <string name="notification_desc">Це потрібно для розміщення необхідних повідомлень</string>
     <string name="permission_is_denied">У дозволі відмовлено</string>
     <string name="root_desc">Ця програма дозволяє вам виконувати повне резервне копіювання вашого пристрою, вимагаючи дозволів root (суперкористувача) для доступу до системних файлів і налаштувань, які стандартні програми не можуть отримати</string>
-    <string name="welcome_screen_app_desc">Насолоджуйтесь безпроблемним резервним копіюванням за допомогою DataBackup. Він простий у використанні та повністю FOSS. Зберігайте свої дані в безпеці без стресу</string>
+    <string name="welcome_screen_app_desc">Насолоджуйтесь безпроблемним резервним копіюванням за допомогою BackupVault. Він простий у використанні та повністю FOSS. Зберігайте свої дані в безпеці без стресу</string>
     <string name="get_started">Почніть роботу</string>
     <string name="dismiss">Відхилити</string>
-    <string name="permissions_screen_desc">Для роботи DataBackup потрібні такі дозволи. Якщо заборонити, деякі функції не працюватимуть належним чином</string>
+    <string name="permissions_screen_desc">Для роботи BackupVault потрібні такі дозволи. Якщо заборонити, деякі функції не працюватимуть належним чином</string>
     <string name="root_denied_msg">Перевірте кореневий менеджер і перезапустіть програму</string>
 </resources>

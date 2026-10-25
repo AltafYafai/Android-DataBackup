@@ -42,7 +42,7 @@
     <string name="media_set_path">Estableix la ruta</string>
     <string name="restore_list">Restaura la llista</string>
     <string name="restore_dir">Restaura el directori</string>
-    <string name="welcome_to_use">Et donem la benvinguda a DataBackup</string>
+    <string name="welcome_to_use">Et donem la benvinguda a BackupVault</string>
     <string name="update_records">Refresca els registres</string>
     <string name="start">Inicia</string>
     <string name="start_desc">Totes les dades generades per l\'aplicació són únicament utilitzades per a les còpies de seguretat / restauracions, i emmagatzemades localment.</string>

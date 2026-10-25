@@ -17,7 +17,7 @@
     <string name="confirm">Potwierdź</string>
     <string name="loading">Ładowanie</string>
     <string name="app_name">BackupVault</string>
-    <string name="welcome_to_use">Witamy w DataBackup</string>
+    <string name="welcome_to_use">Witamy w BackupVault</string>
     <string name="update_records">Aktualizuj rekordy</string>
     <string name="environment_detection">Wykrywanie środowiska</string>
     <string name="start_subtitle">Zgodnie z odpowiednimi zasadami, musisz dokładnie przeczytać i zgodzić się na następujące Umowę Użytkownika oraz Politykę Prywatności przed rozpoczęciem korzystania z tej aplikacji</string>
@@ -398,10 +398,10 @@
     <string name="insecure_server_connection_desc">Włącz tę opcję, jeśli używasz certyfikatu podpisanego samodzielnie</string>
     <string name="insecure_server_connection">Zezwalaj na niezabezpieczone połączenie z serwerem</string>
     <string name="root_desc">Ta aplikacja umożliwia wykonanie pełnej kopii zapasowej urządzenia, wymagając uprawnień roota (superużytkownika) do dostępu do plików systemowych i ustawień, do których standardowe aplikacje nie mają dostępu</string>
-    <string name="welcome_screen_app_desc">Ciesz się bezproblemowymi kopiami zapasowymi dzięki DataBackup. Jest aplikacją prostą w użyciu i całkowicie FOSS. Zachowaj bezpieczeństwo swoich danych bez stresu</string>
+    <string name="welcome_screen_app_desc">Ciesz się bezproblemowymi kopiami zapasowymi dzięki BackupVault. Jest aplikacją prostą w użyciu i całkowicie FOSS. Zachowaj bezpieczeństwo swoich danych bez stresu</string>
     <string name="file">Plik</string>
     <string name="back">Wstecz</string>
-    <string name="permissions_screen_desc">DataBackup potrzebuje następujących uprawnień, aby działać. W przypadku odmowy niektóre funkcje nie będą działać poprawnie</string>
+    <string name="permissions_screen_desc">BackupVault potrzebuje następujących uprawnień, aby działać. W przypadku odmowy niektóre funkcje nie będą działać poprawnie</string>
     <string name="notification_desc">Jest to potrzebne do wysyłania niezbędnych powiadomień</string>
     <string name="get_started">Rozpocznij</string>
     <string name="dismiss">Zamknij</string>

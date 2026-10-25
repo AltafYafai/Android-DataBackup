@@ -1,18 +1,23 @@
 package com.xayah.feature.setup.page.one
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.os.Build
 import androidx.compose.material3.ExperimentalMaterial3Api
 import com.topjohnwu.superuser.Shell
 import com.xayah.core.common.util.BuildConfigUtil
+import com.xayah.core.datastore.saveAppVersionName
 import com.xayah.core.ui.viewmodel.BaseViewModel
 import com.xayah.core.ui.viewmodel.IndexUiEffect
 import com.xayah.core.ui.viewmodel.UiIntent
 import com.xayah.core.ui.viewmodel.UiState
+import com.xayah.core.util.ActivityUtil
 import com.xayah.core.util.NotificationUtil
 import com.xayah.core.util.command.BaseUtil
 import com.xayah.core.util.withLog
+import com.xayah.core.work.WorkManagerInitializer
 import com.xayah.feature.setup.EnvState
 import com.xayah.feature.setup.R
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -34,6 +39,7 @@ sealed class IndexUiIntent : UiIntent {
     data object ValidateAbi : IndexUiIntent()
     data object OnResume : IndexUiIntent()
     data class ValidateNotification(val context: Context) : IndexUiIntent()
+    data class ToMain(val context: Activity) : IndexUiIntent()
 }
 
 @ExperimentalMaterial3Api
@@ -105,6 +111,14 @@ class IndexViewModel @Inject constructor(
                     if (notificationState.value != EnvState.Succeed)
                         NotificationUtil.requestPermissions(intent.context)
                 }
+            }
+
+            is IndexUiIntent.ToMain -> {
+                val act = intent.context
+                WorkManagerInitializer.fullInitialize(act)
+                act.saveAppVersionName()
+                act.startActivity(Intent(act, ActivityUtil.classMainActivity))
+                act.finish()
             }
         }
     }

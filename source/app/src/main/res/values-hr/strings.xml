@@ -112,7 +112,7 @@
     <string name="preserve">Sačuvaj</string>
     <string name="apk_only">Samo APK datoteke</string>
     <string name="overlook">Pregled</string>
-    <string name="welcome_to_use">Dobro došli u DataBackup</string>
+    <string name="welcome_to_use">Dobro došli u BackupVault</string>
     <string name="start_subtitle">U skladu s relevantnim pravilima, pažljivo pročitaj i prihvati sljedeći „Korisnički ugovor” i „Pravila o privatnosti” prije korištenja ove aplikacije</string>
     <string name="start_desc">Svi podaci koje ova aplikacija generira koriste se samo za sigurnosne kopije/obnavljanje i spremaju se samo lokalno.</string>
     <string name="network_desc">Koristi se za dobijanje informacija o ažuriranju aplikacije i analitiku aplikacije</string>
@@ -141,7 +141,7 @@
     <string name="backup_itself_desc">Kopiraj APK datoteku u mapu sigurnosnih kopija nakon izrade sigurnosne kopije</string>
     <string name="compression_test">Test komprimiranja</string>
     <string name="compression_test_desc">Provjeri je li komprimirane arhiva isparvna nakon izrade</string>
-    <string name="backup_itself">Spremanje DataBackup aplikacije</string>
+    <string name="backup_itself">Spremanje BackupVault aplikacije</string>
     <string name="reset_backup_list_desc">Odznači odabire nakon izrade sigurnosne kopije</string>
     <string name="reset_restore_list_desc">Odznači odabire nakon obnavljanja</string>
     <string name="compatible_mode">Kompatibilni način</string>

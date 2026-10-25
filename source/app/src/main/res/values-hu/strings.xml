@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">BackupVault</string>
-    <string name="welcome_to_use">Üdvözlünk a DataBackup-nál</string>
+    <string name="welcome_to_use">Üdvözlünk a BackupVault-nál</string>
     <string name="storage">Tárhely</string>
     <string name="application_desc">Alkalmazási csomaginformációk megszerzéséhez, ami szükséges a biztonsági mentési lista létrehozásához és az alkalmazási adatok méretének meghatározásához</string>
     <string name="update_records">Nyilvántartás frissítése</string>

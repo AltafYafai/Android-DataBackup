@@ -33,4 +33,7 @@
     <item name="restart_to_take_effect" type="string" />
     <item name="configurations" type="string" />
     <item name="configurations_desc" type="string" />
+    <item name="storage" type="string" />
+    <item name="get_started" type="string" />
+    <item name="ic_rounded_folder_open" type="drawable" />
 </resources>

@@ -11,7 +11,6 @@ import com.xayah.core.ui.util.LocalNavController
 import com.xayah.feature.main.configurations.PageConfigurations
 import com.xayah.feature.main.directory.PageDirectory
 import com.xayah.feature.setup.page.one.PageOne
-import com.xayah.feature.setup.page.two.PageTwo
 
 @ExperimentalLayoutApi
 @ExperimentalFoundationApi
@@ -28,7 +27,7 @@ fun SetupGraph() {
             PageOne()
         }
         composable(SetupRoutes.Two.route) {
-            PageTwo()
+            PageOne()
         }
         composable(SetupRoutes.Directory.route) {
             PageDirectory()

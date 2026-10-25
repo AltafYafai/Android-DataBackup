@@ -34,7 +34,7 @@
     <string name="confirm_reload">Recharger ?</string>
     <string name="version">Version</string>
     <string name="feature">Fonctionnalité</string>
-    <string name="welcome_to_use">Bienvenue dans DataBackup</string>
+    <string name="welcome_to_use">Bienvenue dans BackupVault</string>
     <string name="environment_detection">Détection de l\'environnement</string>
     <string name="network">Réseau</string>
     <string name="loading">Chargement</string>
@@ -285,7 +285,7 @@
     <string name="reverse_selection">Inverser la sélection</string>
     <string name="args_restored_at">Restauré à %1$s</string>
     <string name="restore_ssaid_desc">Restaurer l\'application Android ID, elle requiert un redémarrage immédiat pour que la restauration prenne effet</string>
-    <string name="welcome_screen_app_desc">Profitez de sauvegardes sans encombres avec DataBackup. C\'est simple d\'utilisation et entièrement libre. Gardez vos données en sécurité sans le stress</string>
+    <string name="welcome_screen_app_desc">Profitez de sauvegardes sans encombres avec BackupVault. C\'est simple d\'utilisation et entièrement libre. Gardez vos données en sécurité sans le stress</string>
     <string name="root_desc">Cette application vous permet de faire une sauvegarde complète de votre appareil, elle requiert les permissions root (super-utilisateur) pour accéder aux fichiers système et aux paramètres auxquels les applications standard n\'ont pas accès</string>
     <string name="root_denied_msg">Veuillez vérifier votre gestionnaire de root et redémarrer l\'application</string>
     <string name="no_root_directory">Veuillez ne pas sélectionner le dossier racine</string>
@@ -306,7 +306,7 @@
     <string name="get_started">Démarrer</string>
     <string name="file">Fichier</string>
     <string name="dismiss">Rejeter</string>
-    <string name="permissions_screen_desc">DataBackup requiert les permissions suivantes pour fonctionner. Si refusées, certaines fonctionnalités ne marcheront pas correctement</string>
+    <string name="permissions_screen_desc">BackupVault requiert les permissions suivantes pour fonctionner. Si refusées, certaines fonctionnalités ne marcheront pas correctement</string>
     <string name="next">Suivant</string>
     <string name="back">Retour</string>
     <string name="notification_desc">Ceci est requis afin de poster les notification nécessaires</string>

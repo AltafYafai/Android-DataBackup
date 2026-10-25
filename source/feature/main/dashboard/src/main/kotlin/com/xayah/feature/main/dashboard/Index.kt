@@ -179,8 +179,8 @@ fun PageDashboard() {
                             subtitle = "Restore snapshots",
                             badgeText = if (backedUpAppsCount > 0) "$backedUpAppsCount saved" else "Empty",
                             icon = ImageVector.vectorResource(id = R.drawable.ic_rounded_history),
-                            containerColor = ThemedColorSchemeKeyTokens.TertiaryContainer,
-                            onContainerColor = ThemedColorSchemeKeyTokens.OnTertiaryContainer,
+                            containerColor = ThemedColorSchemeKeyTokens.SecondaryContainer,
+                            onContainerColor = ThemedColorSchemeKeyTokens.OnSecondaryContainer,
                             onClick = {
                                 navController.navigateSingle(MainRoutes.List.getRoute(target = Target.Apps, opType = OpType.RESTORE))
                             }
@@ -197,8 +197,8 @@ fun PageDashboard() {
                             subtitle = "Backup & restore",
                             badgeText = if (filesCount > 0) "$filesCount files" else "Configure",
                             icon = ImageVector.vectorResource(id = R.drawable.ic_rounded_folder_open),
-                            containerColor = ThemedColorSchemeKeyTokens.SecondaryContainer,
-                            onContainerColor = ThemedColorSchemeKeyTokens.OnSecondaryContainer,
+                            containerColor = ThemedColorSchemeKeyTokens.SurfaceContainerHigh,
+                            onContainerColor = ThemedColorSchemeKeyTokens.OnSurface,
                             onClick = {
                                 navController.navigateSingle(MainRoutes.FilesHub.route)
                             }

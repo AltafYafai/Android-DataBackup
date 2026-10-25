@@ -109,84 +109,83 @@ fun AppUpdateDialog(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(SizeTokens.Level24),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(SizeTokens.Level16)
+                        .padding(horizontal = 20.dp, vertical = 20.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
-                    // Header Row with Icon & Close Button
+                    // Header Row with Icon, Title & Close Button
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Surface(
-                            modifier = Modifier.size(52.dp),
-                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier.size(44.dp),
+                            shape = RoundedCornerShape(14.dp),
                             color = if (isReadyToInstall) Color(0xFFE8F5E9) else ThemedColorSchemeKeyTokens.PrimaryContainer.value.copy(alpha = 0.6f)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
-                                Text(text = if (isReadyToInstall) "📦" else "🚀", fontSize = 26.sp)
+                                Text(text = if (isReadyToInstall) "📦" else "🚀", fontSize = 22.sp)
+                            }
+                        }
+
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(3.dp)
+                        ) {
+                            Text(
+                                text = if (isReadyToInstall) "Ready to Install" else "Update Available",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = ThemedColorSchemeKeyTokens.OnSurface.value
+                            )
+
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Surface(
+                                    shape = CircleShape,
+                                    color = ThemedColorSchemeKeyTokens.Primary.value.copy(alpha = 0.15f),
+                                    border = BorderStroke(1.dp, ThemedColorSchemeKeyTokens.Primary.value.copy(alpha = 0.45f))
+                                ) {
+                                    Text(
+                                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
+                                        text = "v$versionName",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = ThemedColorSchemeKeyTokens.Primary.value
+                                    )
+                                }
+
+                                val displaySize = if (sizeText.isNotEmpty()) sizeText else if (sizeBytes > 0) sizeBytes.toDouble().formatSize() else ""
+                                if (displaySize.isNotEmpty()) {
+                                    Surface(
+                                        shape = CircleShape,
+                                        color = ThemedColorSchemeKeyTokens.SecondaryContainer.value.copy(alpha = 0.7f)
+                                    ) {
+                                        Text(
+                                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
+                                            text = "📦 $displaySize",
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = ThemedColorSchemeKeyTokens.OnSecondaryContainer.value
+                                        )
+                                    }
+                                }
                             }
                         }
 
                         if (!isDownloading) {
                             IconButton(
                                 onClick = onLaterClick,
-                                modifier = Modifier.size(36.dp)
+                                modifier = Modifier.size(32.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Rounded.Close,
                                     contentDescription = "Close",
-                                    tint = ThemedColorSchemeKeyTokens.OnSurfaceVariant.value
+                                    tint = ThemedColorSchemeKeyTokens.OnSurfaceVariant.value,
+                                    modifier = Modifier.size(20.dp)
                                 )
-                            }
-                        }
-                    }
-
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Text(
-                            text = if (isReadyToInstall) "Update Ready to Install!" else "New Update Available!",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = ThemedColorSchemeKeyTokens.OnSurface.value,
-                            textAlign = TextAlign.Center
-                        )
-
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Surface(
-                                shape = CircleShape,
-                                color = ThemedColorSchemeKeyTokens.Primary.value.copy(alpha = 0.15f),
-                                border = BorderStroke(1.dp, ThemedColorSchemeKeyTokens.Primary.value.copy(alpha = 0.45f))
-                            ) {
-                                Text(
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                                    text = versionName,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = ThemedColorSchemeKeyTokens.Primary.value
-                                )
-                            }
-
-                            val displaySize = if (sizeText.isNotEmpty()) sizeText else if (sizeBytes > 0) sizeBytes.toDouble().formatSize() else ""
-                            if (displaySize.isNotEmpty()) {
-                                Surface(
-                                    shape = CircleShape,
-                                    color = ThemedColorSchemeKeyTokens.SecondaryContainer.value.copy(alpha = 0.7f)
-                                ) {
-                                    Text(
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                                        text = "📦 $displaySize",
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = ThemedColorSchemeKeyTokens.OnSecondaryContainer.value
-                                    )
-                                }
                             }
                         }
                     }
@@ -445,18 +444,17 @@ fun NoUpdateDialog(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(SizeTokens.Level24),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(SizeTokens.Level16)
+                        .padding(horizontal = 20.dp, vertical = 20.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
-                    // Header Row with Icon & Close Button
+                    // Modern Header: Icon + Title & Badges + Close
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Surface(
-                            modifier = Modifier.size(48.dp),
+                            modifier = Modifier.size(44.dp),
                             shape = RoundedCornerShape(14.dp),
                             color = Color(0xFF2E7D32).copy(alpha = 0.15f),
                             border = BorderStroke(1.dp, Color(0xFF2E7D32).copy(alpha = 0.3f))
@@ -466,58 +464,68 @@ fun NoUpdateDialog(
                                     imageVector = Icons.Rounded.Check,
                                     contentDescription = null,
                                     tint = Color(0xFF2E7D32),
-                                    modifier = Modifier.size(26.dp)
+                                    modifier = Modifier.size(24.dp)
                                 )
+                            }
+                        }
+
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(3.dp)
+                        ) {
+                            Text(
+                                text = "Up to Date",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = ThemedColorSchemeKeyTokens.OnSurface.value
+                            )
+
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Surface(
+                                    shape = CircleShape,
+                                    color = ThemedColorSchemeKeyTokens.Primary.value.copy(alpha = 0.12f),
+                                    border = BorderStroke(1.dp, ThemedColorSchemeKeyTokens.Primary.value.copy(alpha = 0.3f))
+                                ) {
+                                    Text(
+                                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
+                                        text = "v$versionName",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = ThemedColorSchemeKeyTokens.Primary.value
+                                    )
+                                }
+
+                                Surface(
+                                    shape = CircleShape,
+                                    color = Color(0xFF2E7D32).copy(alpha = 0.12f),
+                                    border = BorderStroke(1.dp, Color(0xFF2E7D32).copy(alpha = 0.3f))
+                                ) {
+                                    Text(
+                                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
+                                        text = "Latest",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF2E7D32)
+                                    )
+                                }
                             }
                         }
 
                         IconButton(
                             onClick = onDismiss,
-                            modifier = Modifier.size(36.dp)
+                            modifier = Modifier.size(32.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Rounded.Close,
                                 contentDescription = "Close",
-                                tint = ThemedColorSchemeKeyTokens.OnSurfaceVariant.value
+                                tint = ThemedColorSchemeKeyTokens.OnSurfaceVariant.value,
+                                modifier = Modifier.size(20.dp)
                             )
                         }
                     }
-
-                    // Title & Version Badges
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalAlignment = Alignment.Start,
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Text(
-                            text = "No Update Available",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = ThemedColorSchemeKeyTokens.OnSurface.value
-                        )
-
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Surface(
-                                shape = CircleShape,
-                                color = ThemedColorSchemeKeyTokens.Primary.value.copy(alpha = 0.12f),
-                                border = BorderStroke(1.dp, ThemedColorSchemeKeyTokens.Primary.value.copy(alpha = 0.3f))
-                            ) {
-                                Text(
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                                    text = "v$versionName",
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = ThemedColorSchemeKeyTokens.Primary.value
-                                )
-                            }
-
-                            Surface(
-                                shape = CircleShape,
-                                color = Color(0xFF2E7D32).copy(alpha = 0.12f),
-                                border = BorderStroke(1.dp, Color(0xFF2E7D32).copy(alpha = 0.3f))
                             ) {
                                 Text(
                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),

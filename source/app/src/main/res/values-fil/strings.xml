@@ -42,7 +42,7 @@
     <string name="restoring">Nire-restore</string>
     <string name="app_name">BackupVault</string>
     <string name="start">Simulan</string>
-    <string name="welcome_to_use">Maligayang Pagdating sa DataBackup</string>
+    <string name="welcome_to_use">Maligayang Pagdating sa BackupVault</string>
     <string name="update_records">I-update ang mga record</string>
     <string name="environment_detection">Pag-detect ng environment</string>
     <string name="none">Wala</string>

@@ -55,7 +55,7 @@
     <string name="data">Данные</string>
     <string name="version">Версия</string>
     <string name="databases_reload_failed">Не удалось перезагрузить базы данных</string>
-    <string name="backup_itself_desc">Копировать apk DataBackup в папку бекапов при создании бекапа</string>
+    <string name="backup_itself_desc">Копировать apk BackupVault в папку бекапов при создании бекапа</string>
     <string name="monet">Monet</string>
     <string name="account">Аккаунт</string>
     <string name="clean_restoring_desc">Очистка целевой папки перед восстановлением</string>
@@ -114,7 +114,7 @@
     <string name="compression_test_desc">Проверять целостность архива после создания</string>
     <string name="add">Добавить</string>
     <string name="word_return">Обратно</string>
-    <string name="backup_itself">Бекап DataBackup</string>
+    <string name="backup_itself">Бекап BackupVault</string>
     <string name="time">Время</string>
     <string name="restart_failed">Не удалось перезапустить, перезапустите приложение вручную.</string>
     <string name="welcome_to_use">Добро пожаловать</string>
@@ -394,11 +394,11 @@
     <string name="compression_level">Уровень сжатия</string>
     <string name="args_current_level">Текущий уровень: %1$s</string>
     <string name="compression_level_desc">Низкие значения дают быстрое сжатие, высокие значения повышают степень сжатия</string>
-    <string name="welcome_screen_app_desc">Беспроблемно используйте резервное копирование с DataBackup. Это приложение просто использовать и оно полностью свободное. Держите свои данные в безопасности и не волнуйтесь</string>
+    <string name="welcome_screen_app_desc">Беспроблемно используйте резервное копирование с BackupVault. Это приложение просто использовать и оно полностью свободное. Держите свои данные в безопасности и не волнуйтесь</string>
     <string name="get_started">Приступим</string>
     <string name="file">Файл</string>
     <string name="dismiss">Отклонить</string>
-    <string name="permissions_screen_desc">DataBackup нуждается в следующих разрешениях на работу. В случае отказа некоторые функции не будут работать должным образом</string>
+    <string name="permissions_screen_desc">BackupVault нуждается в следующих разрешениях на работу. В случае отказа некоторые функции не будут работать должным образом</string>
     <string name="next">Далее</string>
     <string name="back">Назад</string>
     <string name="notification_desc">Это нужно для необходимых уведомлений</string>

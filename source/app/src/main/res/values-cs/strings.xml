@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="welcome_to_use">Vítejte v aplikaci DataBackup</string>
+    <string name="welcome_to_use">Vítejte v aplikaci BackupVault</string>
     <string name="app_name">BackupVault</string>
     <string name="update_records">Aktualizovat záznamy</string>
     <string name="environment_detection">Detekce prostředí</string>

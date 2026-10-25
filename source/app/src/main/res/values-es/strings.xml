@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <string name="welcome_to_use">Bienvenido a DataBackup</string>
+    <string name="welcome_to_use">Bienvenido a BackupVault</string>
     <string name="update_records">Actualizar registros</string>
     <string name="environment_detection">Detección de entorno</string>
     <string name="start">Iniciar</string>
@@ -398,10 +398,10 @@
     <string name="insecure_server_connection_desc">Activar esta opción cuando se use certificado autofirmado</string>
     <string name="last_update">Última actualización</string>
     <string name="get_started">Empezar</string>
-    <string name="welcome_screen_app_desc">Disfruta de copias de seguridad sin complicaciones con DataBackup. Es fácil de usar y completamente gratuito. Mantén tus datos seguros sin estrés</string>
+    <string name="welcome_screen_app_desc">Disfruta de copias de seguridad sin complicaciones con BackupVault. Es fácil de usar y completamente gratuito. Mantén tus datos seguros sin estrés</string>
     <string name="root_desc">Esta aplicación le permite realizar una copia de seguridad completa de su dispositivo, que requiere permisos de root (superusuario) para acceder a los archivos del sistema y la configuración que las aplicaciones estándar no pueden alcanzar</string>
     <string name="file">Archivo</string>
-    <string name="permissions_screen_desc">DataBackup necesita los siguientes permisos para funcionar. Si se deniegan, algunas funciones no funcionarán correctamente</string>
+    <string name="permissions_screen_desc">BackupVault necesita los siguientes permisos para funcionar. Si se deniegan, algunas funciones no funcionarán correctamente</string>
     <string name="next">Siguiente</string>
     <string name="back">Volver</string>
     <string name="notification_desc">Esto es necesario para publicar las notificaciones necesarias</string>

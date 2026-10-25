@@ -54,7 +54,7 @@
     <string name="info_set_remote_or_local">Postavi udaljenu ili lokalnu putanju</string>
     <string name="translators">Prevodioci</string>
     <string name="translators_desc">Cijenimo njihov trud</string>
-    <string name="welcome_to_use">Dobro došli u DataBackup</string>
+    <string name="welcome_to_use">Dobro došli u BackupVault</string>
     <string name="app_name">BackupVault</string>
     <string name="update_records">Aktualiziraj zapise</string>
     <string name="environment_detection">Prepoznavanje okruženja</string>
@@ -123,7 +123,7 @@
     <string name="restore_completed">Obnavljanje završeno</string>
     <string name="user">Korisnik</string>
     <string name="backup">Sigurnosna kopija</string>
-    <string name="backup_itself">Spremanje DataBackup aplikacije</string>
+    <string name="backup_itself">Spremanje BackupVault aplikacije</string>
     <string name="compression_type_desc">Utječe i na sigurnosno kopiranje i na obnavljanje. Trebaju mijenjati samo napredni korisnici.</string>
     <string name="backup_user_desc">Odredi korisnika tijekom učitavanja popisa sigurnosnih kopija ili spremanja sigurnosnih kopija</string>
     <string name="backup_itself_desc">Kopiraj APK datoteku u mapu sigurnosnih kopija nakon izrade sigurnosne kopije</string>
