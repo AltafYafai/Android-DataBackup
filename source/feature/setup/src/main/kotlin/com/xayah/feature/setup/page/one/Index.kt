@@ -1,6 +1,7 @@
 package com.xayah.feature.setup.page.one
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
@@ -65,6 +66,7 @@ import com.xayah.feature.setup.SetupRoutes
 import com.xayah.feature.setup.SetupScaffold
 import kotlinx.coroutines.flow.first
 
+@ExperimentalAnimationApi
 @ExperimentalFoundationApi
 @ExperimentalMaterial3Api
 @Composable
@@ -249,7 +251,7 @@ fun PageOne() {
                             .fillMaxWidth()
                             .padding(SizeTokens.Level16),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(SizeTokens.Level14)
+                        horizontalArrangement = Arrangement.spacedBy(SizeTokens.Level12)
                     ) {
                         Surface(
                             modifier = Modifier.size(44.dp),
