@@ -18,7 +18,7 @@ sealed class EnvState {
     val colorContainer: ThemedColorSchemeKeyTokens
         get() = when (this) {
             Idle -> {
-                ThemedColorSchemeKeyTokens.SurfaceContainerHighBaselineFixed
+                ThemedColorSchemeKeyTokens.SurfaceContainerHigh
             }
 
             Processing -> {
@@ -37,7 +37,45 @@ sealed class EnvState {
     val colorL80D20: ThemedColorSchemeKeyTokens
         get() = when (this) {
             Idle -> {
-                ThemedColorSchemeKeyTokens.SurfaceDimBaselineFixed
+                ThemedColorSchemeKeyTokens.SurfaceContainerHighest
+            }
+
+            Processing -> {
+                ThemedColorSchemeKeyTokens.Secondary
+            }
+
+            Succeed -> {
+                ThemedColorSchemeKeyTokens.Primary
+            }
+
+            Failed -> {
+                ThemedColorSchemeKeyTokens.Error
+            }
+        }
+
+    val badgeContent: ThemedColorSchemeKeyTokens
+        get() = when (this) {
+            Idle -> {
+                ThemedColorSchemeKeyTokens.OnSurface
+            }
+
+            Processing -> {
+                ThemedColorSchemeKeyTokens.OnSecondary
+            }
+
+            Succeed -> {
+                ThemedColorSchemeKeyTokens.OnPrimary
+            }
+
+            Failed -> {
+                ThemedColorSchemeKeyTokens.OnError
+            }
+        }
+
+    val onColorContainer: ThemedColorSchemeKeyTokens
+        get() = when (this) {
+            Idle -> {
+                ThemedColorSchemeKeyTokens.OnSurface
             }
 
             Processing -> {
@@ -50,25 +88,6 @@ sealed class EnvState {
 
             Failed -> {
                 ThemedColorSchemeKeyTokens.OnErrorContainer
-            }
-        }
-
-    val onColorContainer: ThemedColorSchemeKeyTokens
-        get() = when (this) {
-            Idle -> {
-                ThemedColorSchemeKeyTokens.OnSurface
-            }
-
-            Processing -> {
-                ThemedColorSchemeKeyTokens.SecondaryContainer
-            }
-
-            Succeed -> {
-                ThemedColorSchemeKeyTokens.PrimaryContainer
-            }
-
-            Failed -> {
-                ThemedColorSchemeKeyTokens.ErrorContainer
             }
         }
 

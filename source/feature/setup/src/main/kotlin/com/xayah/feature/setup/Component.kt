@@ -84,19 +84,27 @@ fun PermissionButton(
     onSetting: (() -> Unit)? = null,
     onClick: () -> Unit,
 ) {
+    val contentColor = envState.onColorContainer.value.withState(enabled)
+    val descColor = envState.onColorContainer.value.copy(alpha = 0.78f).withState(enabled)
+
     ActionButton(
         enabled = enabled,
         icon = envState.icon,
         colorContainer = envState.colorContainer,
         colorL80D20 = envState.colorL80D20,
-        onColorContainer = envState.onColorContainer,
+        onColorContainer = envState.badgeContent,
         trailingIcon = {
             if (onSetting != null) {
-                Surface(modifier = Modifier.size(SizeTokens.Level36), shape = CircleShape, onClick = onSetting, color = ThemedColorSchemeKeyTokens.Transparent.value.withState(enabled)) {
+                Surface(
+                    modifier = Modifier.size(SizeTokens.Level36),
+                    shape = CircleShape,
+                    onClick = onSetting,
+                    color = ThemedColorSchemeKeyTokens.Transparent.value.withState(enabled)
+                ) {
                     Icon(
                         modifier = Modifier.padding(SizeTokens.Level8),
                         imageVector = Icons.Outlined.Settings,
-                        tint = ThemedColorSchemeKeyTokens.OnSurface.value.withState(enabled),
+                        tint = contentColor,
                         contentDescription = null
                     )
                 }
@@ -104,15 +112,15 @@ fun PermissionButton(
 
             Icon(
                 imageVector = Icons.Rounded.KeyboardArrowRight,
-                tint = envState.onColorContainer.value.withState(enabled),
+                tint = contentColor,
                 contentDescription = null
             )
         },
         onClick = onClick
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            LabelLargeText(text = title, color = ThemedColorSchemeKeyTokens.OnSurface.value)
-            BodySmallText(text = desc, color = ThemedColorSchemeKeyTokens.OnSurfaceVariant.value)
+            LabelLargeText(text = title, color = contentColor)
+            BodySmallText(text = desc, color = descColor)
         }
     }
 }

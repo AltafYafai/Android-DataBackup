@@ -435,9 +435,7 @@ fun SystemDataScreen(
     val allSelected = selectedTypes.size == 4
 
     Scaffold(
-        modifier = Modifier
-            .fillMaxSize()
-            .statusBarsPadding(),
+        modifier = Modifier.fillMaxSize(),
         containerColor = ThemedColorSchemeKeyTokens.Surface.value,
         topBar = {
             TopAppBar(
@@ -546,27 +544,27 @@ fun SystemDataScreen(
                 .padding(innerPadding)
                 .padding(horizontal = SizeTokens.Level16)
                 .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(SizeTokens.Level16)
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Spacer(modifier = Modifier.height(SizeTokens.Level4))
 
-            // Modern Hero Banner
+            // Modern Compact Header Banner
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(24.dp),
-                color = ThemedColorSchemeKeyTokens.PrimaryContainer.value.copy(alpha = 0.35f),
-                border = BorderStroke(1.2.dp, ThemedColorSchemeKeyTokens.Primary.value.copy(alpha = 0.25f))
+                shape = RoundedCornerShape(16.dp),
+                color = ThemedColorSchemeKeyTokens.PrimaryContainer.value.copy(alpha = 0.25f),
+                border = BorderStroke(1.dp, ThemedColorSchemeKeyTokens.Primary.value.copy(alpha = 0.2f))
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(SizeTokens.Level16),
-                    horizontalArrangement = Arrangement.spacedBy(SizeTokens.Level16),
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Surface(
-                        modifier = Modifier.size(48.dp),
-                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.size(36.dp),
+                        shape = RoundedCornerShape(10.dp),
                         color = ThemedColorSchemeKeyTokens.Primary.value.copy(alpha = 0.15f)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
@@ -574,7 +572,7 @@ fun SystemDataScreen(
                                 imageVector = Icons.Rounded.Key,
                                 contentDescription = null,
                                 tint = ThemedColorSchemeKeyTokens.Primary.value,
-                                modifier = Modifier.size(24.dp)
+                                modifier = Modifier.size(18.dp)
                             )
                         }
                     }
@@ -582,16 +580,14 @@ fun SystemDataScreen(
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = "System Data Vault",
-                            style = MaterialTheme.typography.titleMedium,
+                            style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
                             color = ThemedColorSchemeKeyTokens.OnSurface.value
                         )
-                        Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = "Direct, root-accelerated snapshots of telephony logs, messages, contacts and saved Wi-Fi networks.",
+                            text = "Root-accelerated snapshots with timestamp restore.",
                             style = MaterialTheme.typography.bodySmall,
-                            color = ThemedColorSchemeKeyTokens.OnSurfaceVariant.value,
-                            lineHeight = 16.sp
+                            color = ThemedColorSchemeKeyTokens.OnSurfaceVariant.value
                         )
                     }
                 }
@@ -806,42 +802,43 @@ private fun SystemDataCategoryCard(
     val lastBackupStr = if (category.lastBackupTimestamp > 0) {
         DateUtil.getShortRelativeTimeSpanString(context, category.lastBackupTimestamp, System.currentTimeMillis())
     } else {
-        "Never backed up"
+        "Never"
     }
 
     Surface(
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(16.dp),
         color = ThemedColorSchemeKeyTokens.SurfaceContainerLowest.value,
         border = BorderStroke(
             if (isSelected) 1.5.dp else 1.dp,
-            if (isSelected) ThemedColorSchemeKeyTokens.Primary.value.copy(alpha = 0.6f) else ThemedColorSchemeKeyTokens.OutlineVariant.value.copy(alpha = 0.35f)
+            if (isSelected) ThemedColorSchemeKeyTokens.Primary.value.copy(alpha = 0.7f) else ThemedColorSchemeKeyTokens.OutlineVariant.value.copy(alpha = 0.3f)
         ),
         tonalElevation = SizeTokens.Level1,
-        shadowElevation = SizeTokens.Level1,
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(SizeTokens.Level16),
-            verticalArrangement = Arrangement.spacedBy(SizeTokens.Level12)
+                .padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            // Header: Checkbox + Icon + Title/Subtitle + Backup Badge
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(SizeTokens.Level12)
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Checkbox(
                     checked = isSelected,
                     onCheckedChange = { onToggleSelect() },
+                    modifier = Modifier.size(24.dp),
                     colors = CheckboxDefaults.colors(
                         checkedColor = ThemedColorSchemeKeyTokens.Primary.value
                     )
                 )
 
                 Surface(
-                    modifier = Modifier.size(44.dp),
-                    shape = RoundedCornerShape(14.dp),
+                    modifier = Modifier.size(36.dp),
+                    shape = RoundedCornerShape(10.dp),
                     color = iconBg
                 ) {
                     Box(contentAlignment = Alignment.Center) {
@@ -849,19 +846,45 @@ private fun SystemDataCategoryCard(
                             imageVector = icon,
                             contentDescription = null,
                             tint = iconTint,
-                            modifier = Modifier.size(22.dp)
+                            modifier = Modifier.size(18.dp)
                         )
                     }
                 }
 
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = category.title,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = ThemedColorSchemeKeyTokens.OnSurface.value
-                    )
-                    Spacer(modifier = Modifier.height(2.dp))
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(
+                            text = category.title,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = ThemedColorSchemeKeyTokens.OnSurface.value,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+
+                        if (hasBackups) {
+                            Surface(
+                                shape = CircleShape,
+                                color = Color(0xFF2E7D32).copy(alpha = 0.12f),
+                                border = BorderStroke(0.8.dp, Color(0xFF2E7D32).copy(alpha = 0.35f))
+                            ) {
+                                Text(
+                                    text = if (category.backupCount > 1) "${category.backupCount} backups" else "${category.backedUpCount} saved",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF2E7D32),
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp)
+                                )
+                            }
+                        }
+                    }
+
                     Text(
                         text = "${category.countOnDevice} on device • $lastBackupStr",
                         style = MaterialTheme.typography.bodySmall,
@@ -870,74 +893,60 @@ private fun SystemDataCategoryCard(
                         overflow = TextOverflow.Ellipsis
                     )
                 }
-
-                if (hasBackups) {
-                    Surface(
-                        shape = CircleShape,
-                        color = Color(0xFF2E7D32).copy(alpha = 0.12f),
-                        border = BorderStroke(1.dp, Color(0xFF2E7D32).copy(alpha = 0.3f))
-                    ) {
-                        val countLabel = if (category.backupCount > 1) {
-                            "${category.backedUpCount} saved • ${category.backupCount} backups"
-                        } else {
-                            "${category.backedUpCount} saved"
-                        }
-                        Text(
-                            text = countLabel,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF2E7D32),
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                        )
-                    }
-                }
             }
 
-            // Action row
+            // Action Row: Clean, compact buttons
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(SizeTokens.Level8, Alignment.End),
+                horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 if (onExtraAction != null) {
-                    OutlinedButton(
+                    TextButton(
                         onClick = onExtraAction,
-                        shape = CircleShape,
-                        border = BorderStroke(1.dp, ThemedColorSchemeKeyTokens.OutlineVariant.value.copy(alpha = 0.4f))
+                        modifier = Modifier.height(30.dp),
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Rounded.Visibility,
                             contentDescription = null,
-                            modifier = Modifier.size(16.dp),
+                            modifier = Modifier.size(15.dp),
                             tint = ThemedColorSchemeKeyTokens.Primary.value
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "View Passwords",
-                            style = MaterialTheme.typography.labelMedium,
+                            text = "Passwords",
+                            style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.SemiBold,
                             color = ThemedColorSchemeKeyTokens.Primary.value
                         )
                     }
+                    Spacer(modifier = Modifier.width(4.dp))
                 }
 
                 OutlinedButton(
                     onClick = onRestore,
-                    shape = CircleShape,
+                    modifier = Modifier.height(30.dp),
+                    shape = RoundedCornerShape(8.dp),
                     enabled = hasBackups,
-                    border = BorderStroke(1.dp, ThemedColorSchemeKeyTokens.OutlineVariant.value.copy(alpha = 0.4f))
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                    border = BorderStroke(1.dp, if (hasBackups) ThemedColorSchemeKeyTokens.Primary.value.copy(alpha = 0.4f) else ThemedColorSchemeKeyTokens.OutlineVariant.value.copy(alpha = 0.2f))
                 ) {
                     Text(
                         text = "Restore",
-                        style = MaterialTheme.typography.labelMedium,
+                        style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.SemiBold,
                         color = if (hasBackups) ThemedColorSchemeKeyTokens.Primary.value else ThemedColorSchemeKeyTokens.Outline.value
                     )
                 }
 
+                Spacer(modifier = Modifier.width(6.dp))
+
                 Button(
                     onClick = onBackup,
-                    shape = CircleShape,
+                    modifier = Modifier.height(30.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = ThemedColorSchemeKeyTokens.Primary.value,
                         contentColor = ThemedColorSchemeKeyTokens.OnPrimary.value
@@ -945,7 +954,7 @@ private fun SystemDataCategoryCard(
                 ) {
                     Text(
                         text = "Backup",
-                        style = MaterialTheme.typography.labelMedium,
+                        style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold
                     )
                 }

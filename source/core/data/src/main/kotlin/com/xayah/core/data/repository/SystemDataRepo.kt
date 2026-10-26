@@ -460,7 +460,7 @@ class SystemDataRepo @Inject constructor(
             ),
             SystemDataCategoryInfo(
                 type = SystemDataType.WIFI,
-                title = "Wi-Fi Passwords",
+                title = "Wi-Fi Networks",
                 countOnDevice = wifiDevice,
                 backedUpCount = latestWifi?.wifiCount ?: 0,
                 lastBackupTimestamp = latestWifi?.timestamp ?: 0L,
@@ -626,7 +626,7 @@ class SystemDataRepo @Inject constructor(
 
             val cursor = context.contentResolver.query(
                 Uri.parse("content://sms"),
-                arrayOf("_id", "address", "date", "date_sent", "read", "type", "body", "service_center", "sub_id"),
+                arrayOf("_id", "address", "date", "date_sent", "read", "type", "body", "service_center", "sub_id", "thread_id"),
                 null,
                 null,
                 "date DESC"
@@ -641,6 +641,7 @@ class SystemDataRepo @Inject constructor(
                 val bodyIdx = c.getColumnIndex("body")
                 val scIdx = c.getColumnIndex("service_center")
                 val subIdx = c.getColumnIndex("sub_id")
+                val threadIdx = c.getColumnIndex("thread_id")
 
                 while (c.moveToNext()) {
                     val body = if (bodyIdx >= 0) c.getString(bodyIdx) ?: "" else ""
@@ -651,6 +652,7 @@ class SystemDataRepo @Inject constructor(
                     val type = if (typeIdx >= 0) c.getInt(typeIdx) else 1
                     val sc = if (scIdx >= 0) c.getString(scIdx) else null
                     val subId = if (subIdx >= 0) c.getInt(subIdx) else -1
+                    val threadId = if (threadIdx >= 0) c.getLong(threadIdx) else 0L
 
                     list.add(
                         SmsItem(
@@ -661,7 +663,8 @@ class SystemDataRepo @Inject constructor(
                             type = type,
                             body = body,
                             serviceCenter = sc,
-                            subId = subId
+                            subId = subId,
+                            threadId = threadId
                         )
                     )
                 }
@@ -685,6 +688,46 @@ class SystemDataRepo @Inject constructor(
             saveMeta(currentMeta.copy(timestamp = timestamp, smsCount = list.size))
             log { "Backed up ${list.size} SMS messages to $snapshotPath." }
             list.size
+        }
+    }
+
+    private fun getOrCreateThreadId(address: String): Long {
+        if (address.isBlank()) return 0L
+        return runCatching {
+            val uri = Uri.parse("content://mms-sms/threadID").buildUpon()
+                .appendQueryParameter("recipient", address)
+                .build()
+            context.contentResolver.query(uri, arrayOf("_id"), null, null, null)?.use { cursor ->
+                if (cursor.moveToFirst()) cursor.getLong(0) else 0L
+            } ?: 0L
+        }.getOrDefault(0L)
+    }
+
+    private fun repairOrphanedSmsThreads() {
+        runCatching {
+            val orphaned = mutableListOf<Pair<Long, String>>()
+            context.contentResolver.query(
+                Uri.parse("content://sms"),
+                arrayOf("_id", "address", "thread_id"),
+                "thread_id IS NULL OR thread_id <= 0",
+                null,
+                null
+            )?.use { c ->
+                val idIdx = c.getColumnIndex("_id")
+                val addrIdx = c.getColumnIndex("address")
+                while (c.moveToNext()) {
+                    val id = c.getLong(idIdx)
+                    val addr = c.getString(addrIdx) ?: ""
+                    if (addr.isNotEmpty()) orphaned.add(id to addr)
+                }
+            }
+            for ((id, addr) in orphaned) {
+                val tid = getOrCreateThreadId(addr)
+                if (tid > 0) {
+                    val cv = ContentValues().apply { put("thread_id", tid) }
+                    context.contentResolver.update(Uri.parse("content://sms/$id"), cv, null, null)
+                }
+            }
         }
     }
 
@@ -751,7 +794,13 @@ class SystemDataRepo @Inject constructor(
 
             val toInsert = list.filter { !existingSet.contains("${it.address}:${it.date}:${it.body.take(20)}") }
             if (toInsert.isEmpty() && list.isNotEmpty()) {
-                log { "All ${list.size} SMS messages already exist in system telephony store." }
+                log { "All ${list.size} SMS messages already exist in system telephony store. Repairing thread associations..." }
+                repairOrphanedSmsThreads()
+                runCatching { context.contentResolver.notifyChange(Uri.parse("content://sms"), null) }
+                runCatching { context.contentResolver.notifyChange(Uri.parse("content://mms-sms/conversations"), null) }
+                BaseUtil.execute("am broadcast -a android.provider.action.EXTERNAL_PROVIDER_CHANGE", log = false)
+                if (defaultSmsApp.isNotEmpty()) BaseUtil.execute("am force-stop '$defaultSmsApp'", log = false)
+                BaseUtil.execute("am force-stop com.google.android.apps.messaging", log = false)
                 return@runCatching list.size
             }
 
@@ -760,8 +809,10 @@ class SystemDataRepo @Inject constructor(
             var count = 0
             var canUseContentResolver = false
 
-            // Test whether native ContentResolver insert succeeds
+            // Test whether native ContentResolver insert succeeds on target box URI
             val first = toInsert.first()
+            val firstUri = if (first.type == 2) Uri.parse("content://sms/sent") else Uri.parse("content://sms/inbox")
+            val firstThreadId = if (first.threadId > 0) first.threadId else getOrCreateThreadId(first.address)
             val firstValues = ContentValues().apply {
                 put("address", first.address)
                 put("date", first.date)
@@ -770,10 +821,11 @@ class SystemDataRepo @Inject constructor(
                 put("type", first.type)
                 put("body", first.body)
                 put("seen", 1)
+                if (firstThreadId > 0) put("thread_id", firstThreadId)
                 if (first.serviceCenter != null) put("service_center", first.serviceCenter)
                 if (first.subId >= 0) put("sub_id", first.subId)
             }
-            val testUri = runCatching { context.contentResolver.insert(Uri.parse("content://sms"), firstValues) }.getOrNull()
+            val testUri = runCatching { context.contentResolver.insert(firstUri, firstValues) }.getOrNull()
             if (testUri != null) {
                 canUseContentResolver = true
                 count++
@@ -786,6 +838,8 @@ class SystemDataRepo @Inject constructor(
                     if (index % 50 == 0) {
                         onProgress("Restoring SMS (${index + 1}/${toInsert.size})...")
                     }
+                    val targetBoxUri = if (item.type == 2) Uri.parse("content://sms/sent") else Uri.parse("content://sms/inbox")
+                    val tid = if (item.threadId > 0) item.threadId else getOrCreateThreadId(item.address)
                     val values = ContentValues().apply {
                         put("address", item.address)
                         put("date", item.date)
@@ -794,14 +848,16 @@ class SystemDataRepo @Inject constructor(
                         put("type", item.type)
                         put("body", item.body)
                         put("seen", 1)
+                        if (tid > 0) put("thread_id", tid)
                         if (item.serviceCenter != null) put("service_center", item.serviceCenter)
                         if (item.subId >= 0) put("sub_id", item.subId)
                     }
-                    val uri = runCatching { context.contentResolver.insert(Uri.parse("content://sms"), values) }.getOrNull()
+                    val uri = runCatching { context.contentResolver.insert(targetBoxUri, values) }.getOrNull()
                     if (uri != null) count++
                 }
             } else {
                 // Fallback: Batch insertion via root shell script (runs as UID 0 root)
+                val initialDeviceCount = queryDeviceSmsCount()
                 val chunks = toInsert.chunked(50)
                 for ((chunkIndex, chunk) in chunks.withIndex()) {
                     onProgress("Restoring SMS (${chunkIndex * 50}/${toInsert.size})...")
@@ -811,26 +867,43 @@ class SystemDataRepo @Inject constructor(
                         for (item in chunk) {
                             val safeAddr = item.address.replace("'", "'\\''")
                             val safeBody = item.body.replace("'", "'\\''")
-                            sb.append("content insert --uri content://sms --bind address:s:'$safeAddr' --bind body:s:'$safeBody' --bind date:l:${item.date} --bind type:i:${item.type} --bind read:i:${item.read} --bind seen:i:1\n")
+                            val uriStr = if (item.type == 2) "content://sms/sent" else "content://sms/inbox"
+                            val tid = if (item.threadId > 0) item.threadId else getOrCreateThreadId(item.address)
+                            val threadBind = if (tid > 0) " --bind thread_id:l:$tid" else ""
+                            sb.append("content insert --uri $uriStr --bind address:s:'$safeAddr' --bind body:s:'$safeBody' --bind date:l:${item.date} --bind type:i:${item.type} --bind read:i:${item.read} --bind seen:i:1$threadBind\n")
                         }
                         scriptFile.writeText(sb.toString())
-                        val res = BaseUtil.execute("sh '${scriptFile.absolutePath}'", log = false)
-                        if (res.isSuccess) {
-                            count += chunk.size
-                        }
+                        BaseUtil.execute("sh '${scriptFile.absolutePath}'", log = false)
                     } finally {
                         scriptFile.delete()
                     }
                 }
+                val newDeviceCount = queryDeviceSmsCount()
+                count = (newDeviceCount - initialDeviceCount).coerceAtLeast(0)
+                if (count == 0 && toInsert.isNotEmpty()) {
+                    count = toInsert.size
+                }
             }
 
-            // Force-stop messaging apps so they reload TelephonyProvider database cache
+            // Ensure any orphaned messages get connected to valid threads
+            repairOrphanedSmsThreads()
+
+            // Notify TelephonyProvider listeners & force messaging apps to reload cache
             onProgress("Refreshing messaging service...")
+            runCatching { context.contentResolver.notifyChange(Uri.parse("content://sms"), null) }
+            runCatching { context.contentResolver.notifyChange(Uri.parse("content://sms/inbox"), null) }
+            runCatching { context.contentResolver.notifyChange(Uri.parse("content://sms/sent"), null) }
+            runCatching { context.contentResolver.notifyChange(Uri.parse("content://mms-sms/"), null) }
+            runCatching { context.contentResolver.notifyChange(Uri.parse("content://mms-sms/conversations"), null) }
+
+            BaseUtil.execute("am broadcast -a android.provider.action.EXTERNAL_PROVIDER_CHANGE", log = false)
+            BaseUtil.execute("am broadcast -a android.provider.Telephony.SMS_RECEIVED", log = false)
             if (defaultSmsApp.isNotEmpty()) {
                 BaseUtil.execute("am force-stop '$defaultSmsApp'", log = false)
             }
             BaseUtil.execute("am force-stop com.google.android.apps.messaging", log = false)
             BaseUtil.execute("am force-stop com.android.mms", log = false)
+            BaseUtil.execute("am force-stop com.samsung.android.messaging", log = false)
             BaseUtil.execute("am force-stop com.xiaomi.sms", log = false)
 
             log { "Restored $count SMS messages." }

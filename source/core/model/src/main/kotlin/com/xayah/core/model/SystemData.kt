@@ -44,6 +44,7 @@ data class SmsItem(
     @SerializedName("body") val body: String,
     @SerializedName("service_center") val serviceCenter: String? = null,
     @SerializedName("sub_id") val subId: Int = -1,
+    @SerializedName("thread_id") val threadId: Long = 0L,
 )
 
 data class ContactPhoneItem(

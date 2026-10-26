@@ -7,7 +7,15 @@
     <item name="preprocessing" type="string" />
     <item name="post_processing" type="string" />
     <item name="task_details" type="string" />
+    <item name="backup" type="string" />
+    <item name="restore" type="string" />
+    <item name="succeed" type="string" />
+    <item name="failed" type="string" />
 
     <item name="ic_rounded_acute" type="drawable" />
     <item name="ic_rounded_history" type="drawable" />
+    <item name="ic_rounded_check_circle" type="drawable" />
+    <item name="ic_rounded_cancel_circle" type="drawable" />
+    <item name="ic_rounded_folder_open" type="drawable" />
+    <item name="ic_rounded_apps" type="drawable" />
 </resources>

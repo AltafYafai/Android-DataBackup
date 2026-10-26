@@ -143,6 +143,7 @@ fun AppUpdateDialog(
                                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
+                                val cleanVersion = versionName.trim().removePrefix("v").removePrefix("V")
                                 Surface(
                                     shape = CircleShape,
                                     color = ThemedColorSchemeKeyTokens.Primary.value.copy(alpha = 0.15f),
@@ -150,7 +151,7 @@ fun AppUpdateDialog(
                                 ) {
                                     Text(
                                         modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
-                                        text = "v$versionName",
+                                        text = "v$cleanVersion",
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = ThemedColorSchemeKeyTokens.Primary.value
@@ -484,6 +485,7 @@ fun NoUpdateDialog(
                                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
+                                val cleanVersion = versionName.trim().removePrefix("v").removePrefix("V")
                                 Surface(
                                     shape = CircleShape,
                                     color = ThemedColorSchemeKeyTokens.Primary.value.copy(alpha = 0.12f),
@@ -491,7 +493,7 @@ fun NoUpdateDialog(
                                 ) {
                                     Text(
                                         modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
-                                        text = "v$versionName",
+                                        text = "v$cleanVersion",
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = ThemedColorSchemeKeyTokens.Primary.value
