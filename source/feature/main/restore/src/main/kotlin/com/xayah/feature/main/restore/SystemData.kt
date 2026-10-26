@@ -802,6 +802,7 @@ private fun SystemDataCategoryCard(
     onExtraAction: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
+    val hasBackups = category.backedUpCount > 0 || category.backupCount > 0
     val lastBackupStr = if (category.lastBackupTimestamp > 0) {
         DateUtil.getShortRelativeTimeSpanString(context, category.lastBackupTimestamp, System.currentTimeMillis())
     } else {
@@ -870,7 +871,6 @@ private fun SystemDataCategoryCard(
                     )
                 }
 
-                val hasBackups = category.backedUpCount > 0 || category.backupCount > 0
                 if (hasBackups) {
                     Surface(
                         shape = CircleShape,
