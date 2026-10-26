@@ -9,12 +9,14 @@ import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -56,6 +58,7 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -1190,6 +1193,7 @@ private fun WifiPasswordViewerDialog(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun RestoreTimestampDialog(
     targetType: SystemDataType?,
@@ -1223,22 +1227,23 @@ private fun RestoreTimestampDialog(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(SizeTokens.Level20),
-                verticalArrangement = Arrangement.spacedBy(SizeTokens.Level12)
+                    .padding(horizontal = 20.dp, vertical = 18.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                // Header
+                // Dialog Header
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Row(
+                        modifier = Modifier.weight(1f),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(SizeTokens.Level8)
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         Surface(
-                            modifier = Modifier.size(36.dp),
-                            shape = CircleShape,
+                            modifier = Modifier.size(38.dp),
+                            shape = RoundedCornerShape(10.dp),
                             color = ThemedColorSchemeKeyTokens.Primary.value.copy(alpha = 0.12f)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
@@ -1251,7 +1256,7 @@ private fun RestoreTimestampDialog(
                             }
                         }
 
-                        Column {
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = if (targetType != null) "Restore ${targetType.displayName}" else "Restore System Data",
                                 style = MaterialTheme.typography.titleMedium,
@@ -1266,14 +1271,20 @@ private fun RestoreTimestampDialog(
                         }
                     }
 
-                    IconButton(onClick = onDismiss) {
+                    IconButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.size(32.dp)
+                    ) {
                         Icon(
                             imageVector = Icons.Rounded.Close,
                             contentDescription = "Close",
-                            tint = ThemedColorSchemeKeyTokens.OnSurfaceVariant.value
+                            tint = ThemedColorSchemeKeyTokens.OnSurfaceVariant.value,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                 }
+
+                HorizontalDivider(color = ThemedColorSchemeKeyTokens.OutlineVariant.value.copy(alpha = 0.25f))
 
                 if (snapshots.isEmpty()) {
                     Box(
@@ -1294,7 +1305,7 @@ private fun RestoreTimestampDialog(
                         modifier = Modifier
                             .fillMaxWidth()
                             .weight(1f, fill = false),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         items(snapshots) { snap ->
                             val isSelected = snap.timestamp == selectedTimestamp
@@ -1306,14 +1317,14 @@ private fun RestoreTimestampDialog(
                             Surface(
                                 shape = RoundedCornerShape(16.dp),
                                 color = if (isSelected) {
-                                    ThemedColorSchemeKeyTokens.PrimaryContainer.value.copy(alpha = 0.25f)
+                                    ThemedColorSchemeKeyTokens.PrimaryContainer.value.copy(alpha = 0.28f)
                                 } else {
                                     ThemedColorSchemeKeyTokens.SurfaceContainerHighest.value.copy(alpha = 0.35f)
                                 },
                                 border = BorderStroke(
                                     width = if (isSelected) 1.5.dp else 1.dp,
                                     color = if (isSelected) {
-                                        ThemedColorSchemeKeyTokens.Primary.value.copy(alpha = 0.7f)
+                                        ThemedColorSchemeKeyTokens.Primary.value.copy(alpha = 0.8f)
                                     } else {
                                         ThemedColorSchemeKeyTokens.OutlineVariant.value.copy(alpha = 0.3f)
                                     }
@@ -1326,52 +1337,87 @@ private fun RestoreTimestampDialog(
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(horizontal = SizeTokens.Level12, vertical = SizeTokens.Level10),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(SizeTokens.Level8)
+                                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                                    verticalAlignment = Alignment.Top,
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                                 ) {
-                                    RadioButton(
-                                        selected = isSelected,
-                                        onClick = { onSelectTimestamp(snap.timestamp) },
-                                        colors = RadioButtonDefaults.colors(
-                                            selectedColor = ThemedColorSchemeKeyTokens.Primary.value
-                                        )
-                                    )
+                                    // Custom 20x20dp Radio Indicator (aligned to top)
+                                    Box(
+                                        modifier = Modifier
+                                            .padding(top = 2.dp)
+                                            .size(20.dp)
+                                            .background(
+                                                color = if (isSelected) ThemedColorSchemeKeyTokens.Primary.value else Color.Transparent,
+                                                shape = CircleShape
+                                            )
+                                            .border(
+                                                width = 2.dp,
+                                                color = if (isSelected) ThemedColorSchemeKeyTokens.Primary.value else ThemedColorSchemeKeyTokens.Outline.value.copy(alpha = 0.5f),
+                                                shape = CircleShape
+                                            ),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        if (isSelected) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(8.dp)
+                                                    .background(ThemedColorSchemeKeyTokens.OnPrimary.value, CircleShape)
+                                            )
+                                        }
+                                    }
 
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(
-                                            text = formattedDate,
-                                            style = MaterialTheme.typography.titleSmall,
-                                            fontWeight = FontWeight.Bold,
-                                            color = ThemedColorSchemeKeyTokens.OnSurface.value
-                                        )
-                                        Text(
-                                            text = relativeTime,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = ThemedColorSchemeKeyTokens.OnSurfaceVariant.value
-                                        )
-
-                                        Spacer(modifier = Modifier.height(4.dp))
-
-                                        // Category badges
+                                    // Content Column
+                                    Column(
+                                        modifier = Modifier.weight(1f),
+                                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        // Date & Relative Time Badge
                                         Row(
-                                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                            verticalAlignment = Alignment.CenterVertically
+                                            modifier = Modifier.fillMaxWidth(),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            Text(
+                                                text = formattedDate,
+                                                style = MaterialTheme.typography.titleSmall,
+                                                fontWeight = FontWeight.Bold,
+                                                color = ThemedColorSchemeKeyTokens.OnSurface.value,
+                                                modifier = Modifier.weight(1f, fill = false),
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+
+                                            Surface(
+                                                shape = CircleShape,
+                                                color = if (isSelected) ThemedColorSchemeKeyTokens.Primary.value.copy(alpha = 0.15f)
+                                                else ThemedColorSchemeKeyTokens.SurfaceContainerHighest.value.copy(alpha = 0.6f),
+                                                border = BorderStroke(
+                                                    0.6.dp,
+                                                    if (isSelected) ThemedColorSchemeKeyTokens.Primary.value.copy(alpha = 0.35f)
+                                                    else ThemedColorSchemeKeyTokens.OutlineVariant.value.copy(alpha = 0.25f)
+                                                )
+                                            ) {
+                                                Text(
+                                                    text = relativeTime,
+                                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                                                    fontWeight = FontWeight.Medium,
+                                                    color = if (isSelected) ThemedColorSchemeKeyTokens.Primary.value else ThemedColorSchemeKeyTokens.OnSurfaceVariant.value,
+                                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
+                                                )
+                                            }
+                                        }
+
+                                        // Category Badges
+                                        FlowRow(
+                                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                            verticalArrangement = Arrangement.spacedBy(4.dp)
                                         ) {
                                             if (targetType != null) {
                                                 val count = snap.countFor(targetType)
-                                                Surface(
-                                                    shape = CircleShape,
-                                                    color = ThemedColorSchemeKeyTokens.Primary.value.copy(alpha = 0.12f)
-                                                ) {
-                                                    Text(
-                                                        text = "$count saved",
-                                                        fontSize = 11.sp,
-                                                        fontWeight = FontWeight.SemiBold,
-                                                        color = ThemedColorSchemeKeyTokens.Primary.value,
-                                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                                                    )
-                                                }
+                                                MiniBadge(
+                                                    text = "$count saved",
+                                                    color = ThemedColorSchemeKeyTokens.Primary.value
+                                                )
                                             } else {
                                                 if (snap.callLogsCount > 0) {
                                                     MiniBadge(text = "${snap.callLogsCount} Calls", color = Color(0xFF00796B))
@@ -1389,15 +1435,16 @@ private fun RestoreTimestampDialog(
                                         }
                                     }
 
+                                    // Delete Button (top-aligned alongside header)
                                     IconButton(
                                         onClick = { snapshotToDelete = snap.timestamp },
-                                        modifier = Modifier.size(32.dp)
+                                        modifier = Modifier.size(28.dp)
                                     ) {
                                         Icon(
                                             imageVector = Icons.Rounded.Delete,
                                             contentDescription = "Delete",
                                             tint = ThemedColorSchemeKeyTokens.Error.value.copy(alpha = 0.7f),
-                                            modifier = Modifier.size(18.dp)
+                                            modifier = Modifier.size(16.dp)
                                         )
                                     }
                                 }
@@ -1408,27 +1455,43 @@ private fun RestoreTimestampDialog(
 
                 // Action Buttons
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(SizeTokens.Level8, Alignment.End),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.End),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     OutlinedButton(
                         onClick = onDismiss,
-                        shape = CircleShape
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.height(36.dp),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
+                        border = BorderStroke(1.dp, ThemedColorSchemeKeyTokens.OutlineVariant.value.copy(alpha = 0.4f))
                     ) {
-                        Text(text = "Cancel")
+                        Text(
+                            text = "Cancel",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = ThemedColorSchemeKeyTokens.OnSurfaceVariant.value
+                        )
                     }
 
                     Button(
                         onClick = onConfirm,
                         enabled = selectedTimestamp != null,
-                        shape = CircleShape,
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.height(36.dp),
+                        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 0.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = ThemedColorSchemeKeyTokens.Primary.value,
                             contentColor = ThemedColorSchemeKeyTokens.OnPrimary.value
                         )
                     ) {
-                        Text(text = "Restore", fontWeight = FontWeight.Bold)
+                        Text(
+                            text = "Restore",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
             }
@@ -1442,13 +1505,14 @@ private fun RestoreTimestampDialog(
                 shape = RoundedCornerShape(20.dp),
                 color = ThemedColorSchemeKeyTokens.SurfaceContainerLowest.value,
                 tonalElevation = SizeTokens.Level6,
+                border = BorderStroke(1.dp, ThemedColorSchemeKeyTokens.OutlineVariant.value.copy(alpha = 0.3f)),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
             ) {
                 Column(
                     modifier = Modifier.padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
                     Text(
                         text = "Delete Backup?",
@@ -1463,9 +1527,15 @@ private fun RestoreTimestampDialog(
                     )
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
+                        horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.End),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        OutlinedButton(onClick = { snapshotToDelete = null }, shape = CircleShape) {
+                        OutlinedButton(
+                            onClick = { snapshotToDelete = null },
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.height(36.dp),
+                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 0.dp)
+                        ) {
                             Text("Cancel")
                         }
                         Button(
@@ -1474,7 +1544,9 @@ private fun RestoreTimestampDialog(
                                 snapshotToDelete = null
                                 if (toDel != null) onDeleteSnapshot(toDel)
                             },
-                            shape = CircleShape,
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.height(36.dp),
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = ThemedColorSchemeKeyTokens.Error.value,
                                 contentColor = ThemedColorSchemeKeyTokens.OnError.value
@@ -1492,15 +1564,16 @@ private fun RestoreTimestampDialog(
 @Composable
 private fun MiniBadge(text: String, color: Color) {
     Surface(
-        shape = CircleShape,
-        color = color.copy(alpha = 0.12f)
+        shape = RoundedCornerShape(6.dp),
+        color = color.copy(alpha = 0.12f),
+        border = BorderStroke(0.6.dp, color.copy(alpha = 0.3f))
     ) {
         Text(
             text = text,
-            fontSize = 10.sp,
+            fontSize = 11.sp,
             fontWeight = FontWeight.SemiBold,
             color = color,
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+            modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.5.dp)
         )
     }
 }
