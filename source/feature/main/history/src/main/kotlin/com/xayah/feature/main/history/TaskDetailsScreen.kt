@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
+
 package com.xayah.feature.main.history
 
 import android.annotation.SuppressLint
@@ -8,6 +10,7 @@ import android.widget.Toast
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -547,6 +550,7 @@ private fun StatMetricPill(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun AppDetailCard(
     item: TaskDetailPackageEntity,
@@ -855,6 +859,7 @@ private fun PartitionDetailRow(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun FileDetailCard(
     item: TaskDetailMediaEntity,
