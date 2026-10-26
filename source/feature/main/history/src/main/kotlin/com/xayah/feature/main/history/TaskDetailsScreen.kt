@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
+@file:OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 
 package com.xayah.feature.main.history
 
@@ -15,6 +15,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -555,9 +557,6 @@ private fun StatMetricPill(
 fun AppDetailCard(
     item: TaskDetailPackageEntity,
 ) {
-    var expanded by remember { mutableStateOf(!item.isSuccess) }
-    val context = LocalContext.current
-
     val activePartitions = remember(item) {
         item.getActivePartitions()
     }
@@ -569,6 +568,11 @@ fun AppDetailCard(
     }
 
     val isSuccess = item.isSuccess
+    val hasLogsOrError = remember(activePartitions, isSuccess) {
+        !isSuccess || activePartitions.any { it.info.log.isNotBlank() || it.info.state == OperationState.ERROR }
+    }
+    var expanded by remember { mutableStateOf(!isSuccess && hasLogsOrError) }
+    val context = LocalContext.current
 
     Surface(
         modifier = Modifier
@@ -584,7 +588,7 @@ fun AppDetailCard(
             if (isSuccess) ThemedColorSchemeKeyTokens.OutlineVariant.value.copy(alpha = 0.35f)
             else ThemedColorSchemeKeyTokens.Error.value.copy(alpha = 0.45f)
         ),
-        onClick = { expanded = !expanded }
+        onClick = { if (hasLogsOrError) expanded = !expanded }
     ) {
         Column(
             modifier = Modifier
@@ -599,7 +603,7 @@ fun AppDetailCard(
             ) {
                 PackageIconImage(
                     packageName = item.packageEntity.packageName,
-                    size = 38.dp
+                    size = 40.dp
                 )
 
                 Column(modifier = Modifier.weight(1f)) {
@@ -647,7 +651,7 @@ fun AppDetailCard(
                     Row(
                         modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(3.dp)
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Icon(
                             imageVector = if (isSuccess) Icons.Rounded.Check else Icons.Rounded.Close,
@@ -664,52 +668,50 @@ fun AppDetailCard(
                     }
                 }
 
-                // Expand Chevron Icon
-                Icon(
-                    imageVector = if (expanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp),
-                    tint = ThemedColorSchemeKeyTokens.OnSurfaceVariant.value
-                )
+                // Expand Chevron Icon only if there are logs or errors
+                if (hasLogsOrError) {
+                    Icon(
+                        imageVector = if (expanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                        tint = ThemedColorSchemeKeyTokens.OnSurfaceVariant.value
+                    )
+                }
             }
 
-            // Compact Active Partition Pills
+            // Compact Partition Badges: FlowRow wraps naturally with tight spacing, eliminating empty middle space
             if (activePartitions.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(10.dp))
-                Row(
+                FlowRow(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    activePartitions.take(4).forEach { part ->
-                        PartitionMiniPill(part)
-                    }
-                    if (activePartitions.size > 4) {
-                        Text(
-                            text = "+${activePartitions.size - 4}",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = ThemedColorSchemeKeyTokens.OnSurfaceVariant.value
-                        )
+                    activePartitions.forEach { part ->
+                        PartitionBadge(part = part)
                     }
                 }
             }
 
-            // Expanded Section: Partition details and logs
-            if (expanded) {
-                Spacer(modifier = Modifier.height(12.dp))
-                Divider()
-                Spacer(modifier = Modifier.height(10.dp))
+            // Expanded Section: Only show logs and errors! No blank duplicate partition rows!
+            if (expanded && hasLogsOrError) {
+                val errorOrLogPartitions = activePartitions.filter { it.info.log.isNotBlank() || it.info.state == OperationState.ERROR }
+                if (errorOrLogPartitions.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Divider()
+                    Spacer(modifier = Modifier.height(8.dp))
 
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    activePartitions.forEach { part ->
-                        PartitionDetailRow(part = part, onCopyLog = { log ->
-                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                            clipboard.setPrimaryClip(ClipData.newPlainText("Log", log))
-                            Toast.makeText(context, "Log copied", Toast.LENGTH_SHORT).show()
-                        })
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        errorOrLogPartitions.forEach { part ->
+                            PartitionLogBlock(part = part, onCopyLog = { log ->
+                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                clipboard.setPrimaryClip(ClipData.newPlainText("Log", log))
+                                Toast.makeText(context, "Log copied", Toast.LENGTH_SHORT).show()
+                            })
+                        }
                     }
                 }
             }
@@ -718,34 +720,34 @@ fun AppDetailCard(
 }
 
 @Composable
-private fun PartitionMiniPill(part: PartitionDetail) {
+private fun PartitionBadge(part: PartitionDetail) {
     val isPartDone = part.info.state == OperationState.DONE
     val isPartError = part.info.state == OperationState.ERROR
     val sizeText = if (part.info.bytes > 0) part.info.bytes.toDouble().formatSize() else ""
 
     Surface(
-        shape = RoundedCornerShape(6.dp),
+        shape = RoundedCornerShape(8.dp),
         color = when {
-            isPartError -> ThemedColorSchemeKeyTokens.ErrorContainer.value.copy(alpha = 0.4f)
-            isPartDone -> ThemedColorSchemeKeyTokens.SurfaceContainerHighest.value.copy(alpha = 0.6f)
-            else -> ThemedColorSchemeKeyTokens.SurfaceContainerHighest.value.copy(alpha = 0.3f)
+            isPartError -> ThemedColorSchemeKeyTokens.ErrorContainer.value.copy(alpha = 0.35f)
+            isPartDone -> ThemedColorSchemeKeyTokens.SurfaceContainerHighest.value.copy(alpha = 0.5f)
+            else -> ThemedColorSchemeKeyTokens.SurfaceContainerHighest.value.copy(alpha = 0.25f)
         },
         border = BorderStroke(
             0.6.dp,
             when {
                 isPartError -> ThemedColorSchemeKeyTokens.Error.value.copy(alpha = 0.4f)
-                else -> ThemedColorSchemeKeyTokens.OutlineVariant.value.copy(alpha = 0.2f)
+                else -> ThemedColorSchemeKeyTokens.OutlineVariant.value.copy(alpha = 0.25f)
             }
         )
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.5.dp),
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(3.dp)
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Box(
                 modifier = Modifier
-                    .size(5.dp)
+                    .size(6.dp)
                     .background(
                         color = when {
                             isPartError -> ThemedColorSchemeKeyTokens.Error.value
@@ -756,22 +758,29 @@ private fun PartitionMiniPill(part: PartitionDetail) {
                     )
             )
             Text(
-                text = if (sizeText.isNotEmpty()) "${part.title} $sizeText" else part.title,
-                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                text = part.title,
+                style = MaterialTheme.typography.labelMedium.copy(fontSize = 11.sp),
+                fontWeight = FontWeight.SemiBold,
                 color = if (isPartError) ThemedColorSchemeKeyTokens.Error.value else ThemedColorSchemeKeyTokens.OnSurface.value
             )
+            if (sizeText.isNotEmpty()) {
+                Text(
+                    text = sizeText,
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                    fontWeight = FontWeight.Medium,
+                    color = if (isPartError) ThemedColorSchemeKeyTokens.Error.value.copy(alpha = 0.85f) else ThemedColorSchemeKeyTokens.Primary.value
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun PartitionDetailRow(
+private fun PartitionLogBlock(
     part: PartitionDetail,
     onCopyLog: (String) -> Unit
 ) {
-    val isPartDone = part.info.state == OperationState.DONE
     val isPartError = part.info.state == OperationState.ERROR
-    val sizeText = if (part.info.bytes > 0) part.info.bytes.toDouble().formatSize() else "--"
 
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(
@@ -784,36 +793,34 @@ private fun PartitionDetailRow(
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Icon(
-                    imageVector = when {
-                        isPartError -> Icons.Rounded.Close
-                        isPartDone -> Icons.Rounded.Check
-                        else -> Icons.Rounded.Circle
-                    },
+                    imageVector = if (isPartError) Icons.Rounded.Close else Icons.Rounded.Check,
                     contentDescription = null,
-                    modifier = Modifier.size(13.dp),
-                    tint = when {
-                        isPartError -> ThemedColorSchemeKeyTokens.Error.value
-                        isPartDone -> Color(0xFF2E7D32)
-                        else -> ThemedColorSchemeKeyTokens.OnSurfaceVariant.value
-                    }
+                    modifier = Modifier.size(12.dp),
+                    tint = if (isPartError) ThemedColorSchemeKeyTokens.Error.value else Color(0xFF2E7D32)
                 )
                 Text(
-                    text = part.title,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium,
-                    color = ThemedColorSchemeKeyTokens.OnSurface.value
+                    text = "${part.title} " + if (isPartError) stringResource(R.string.failed) else "Log",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (isPartError) ThemedColorSchemeKeyTokens.Error.value else ThemedColorSchemeKeyTokens.OnSurface.value
                 )
             }
 
-            Text(
-                text = sizeText,
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = ThemedColorSchemeKeyTokens.OnSurfaceVariant.value
-            )
+            if (part.info.log.isNotBlank()) {
+                IconButton(
+                    onClick = { onCopyLog(part.info.log) },
+                    modifier = Modifier.size(20.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.ContentCopy,
+                        contentDescription = "Copy log",
+                        modifier = Modifier.size(12.dp),
+                        tint = ThemedColorSchemeKeyTokens.OnSurfaceVariant.value
+                    )
+                }
+            }
         }
 
-        // If partition has a log
         if (part.info.log.isNotBlank()) {
             Spacer(modifier = Modifier.height(4.dp))
             Surface(
@@ -827,33 +834,16 @@ private fun PartitionDetailRow(
                     else ThemedColorSchemeKeyTokens.OutlineVariant.value.copy(alpha = 0.2f)
                 )
             ) {
-                Row(
+                Text(
+                    text = part.info.log.trim(),
+                    fontFamily = FontFamily.Monospace,
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                    color = if (isPartError) ThemedColorSchemeKeyTokens.Error.value
+                    else ThemedColorSchemeKeyTokens.OnSurfaceVariant.value,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.Top,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = part.info.log.trim(),
-                        fontFamily = FontFamily.Monospace,
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                        color = if (isPartError) ThemedColorSchemeKeyTokens.Error.value
-                        else ThemedColorSchemeKeyTokens.OnSurfaceVariant.value,
-                        modifier = Modifier.weight(1f)
-                    )
-                    IconButton(
-                        onClick = { onCopyLog(part.info.log) },
-                        modifier = Modifier.size(20.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.ContentCopy,
-                            contentDescription = "Copy log",
-                            modifier = Modifier.size(12.dp),
-                            tint = ThemedColorSchemeKeyTokens.OnSurfaceVariant.value
-                        )
-                    }
-                }
+                        .padding(8.dp)
+                )
             }
         }
     }
@@ -864,10 +854,11 @@ private fun PartitionDetailRow(
 fun FileDetailCard(
     item: TaskDetailMediaEntity,
 ) {
-    var expanded by remember { mutableStateOf(!item.isSuccess) }
+    val isSuccess = item.isSuccess
+    val hasLog = remember(item) { item.mediaInfo.log.isNotBlank() || !isSuccess }
+    var expanded by remember { mutableStateOf(!isSuccess && hasLog) }
     val context = LocalContext.current
     val sizeText = if (item.mediaInfo.bytes > 0) item.mediaInfo.bytes.toDouble().formatSize() else ""
-    val isSuccess = item.isSuccess
 
     Surface(
         modifier = Modifier
@@ -883,7 +874,7 @@ fun FileDetailCard(
             if (isSuccess) ThemedColorSchemeKeyTokens.OutlineVariant.value.copy(alpha = 0.35f)
             else ThemedColorSchemeKeyTokens.Error.value.copy(alpha = 0.45f)
         ),
-        onClick = { expanded = !expanded }
+        onClick = { if (hasLog) expanded = !expanded }
     ) {
         Column(
             modifier = Modifier
@@ -896,7 +887,7 @@ fun FileDetailCard(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Surface(
-                    modifier = Modifier.size(38.dp),
+                    modifier = Modifier.size(40.dp),
                     shape = RoundedCornerShape(10.dp),
                     color = ThemedColorSchemeKeyTokens.SurfaceContainerHighest.value.copy(alpha = 0.6f)
                 ) {
@@ -955,7 +946,7 @@ fun FileDetailCard(
                     Row(
                         modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(3.dp)
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Icon(
                             imageVector = if (isSuccess) Icons.Rounded.Check else Icons.Rounded.Close,
@@ -970,6 +961,15 @@ fun FileDetailCard(
                             color = if (isSuccess) Color(0xFF2E7D32) else ThemedColorSchemeKeyTokens.Error.value
                         )
                     }
+                }
+
+                if (hasLog) {
+                    Icon(
+                        imageVector = if (expanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                        tint = ThemedColorSchemeKeyTokens.OnSurfaceVariant.value
+                    )
                 }
             }
 
