@@ -19,6 +19,7 @@ data class SystemDataCategoryInfo(
     val countOnDevice: Int,
     val backedUpCount: Int,
     val lastBackupTimestamp: Long,
+    val backupCount: Int = 0,
     val isSelected: Boolean = true,
 )
 
@@ -83,3 +84,31 @@ data class SystemBackupMeta(
     @SerializedName("contacts_count") val contactsCount: Int = 0,
     @SerializedName("wifi_count") val wifiCount: Int = 0,
 )
+
+data class SystemBackupSnapshot(
+    @SerializedName("timestamp") val timestamp: Long = System.currentTimeMillis(),
+    @SerializedName("date_formatted") val dateFormatted: String = "",
+    @SerializedName("call_logs_count") val callLogsCount: Int = 0,
+    @SerializedName("sms_count") val smsCount: Int = 0,
+    @SerializedName("contacts_count") val contactsCount: Int = 0,
+    @SerializedName("wifi_count") val wifiCount: Int = 0,
+    @SerializedName("types") val types: List<String> = emptyList(),
+) {
+    fun hasType(type: SystemDataType): Boolean {
+        return when (type) {
+            SystemDataType.CALL_LOG -> callLogsCount > 0 || types.contains(type.id)
+            SystemDataType.SMS -> smsCount > 0 || types.contains(type.id)
+            SystemDataType.CONTACTS -> contactsCount > 0 || types.contains(type.id)
+            SystemDataType.WIFI -> wifiCount > 0 || types.contains(type.id)
+        }
+    }
+
+    fun countFor(type: SystemDataType): Int {
+        return when (type) {
+            SystemDataType.CALL_LOG -> callLogsCount
+            SystemDataType.SMS -> smsCount
+            SystemDataType.CONTACTS -> contactsCount
+            SystemDataType.WIFI -> wifiCount
+        }
+    }
+}

@@ -40,7 +40,9 @@ import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Contacts
 import androidx.compose.material.icons.rounded.ContentCopy
+import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.ErrorOutline
+import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Key
 import androidx.compose.material.icons.rounded.Message
 import androidx.compose.material.icons.rounded.Refresh
@@ -59,6 +61,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -88,6 +92,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.xayah.core.data.repository.SystemDataRepo
+import com.xayah.core.model.SystemBackupSnapshot
 import com.xayah.core.model.SystemDataCategoryInfo
 import com.xayah.core.model.SystemDataType
 import com.xayah.core.model.WifiNetworkItem
@@ -137,6 +142,19 @@ class SystemDataViewModel @Inject constructor(
     private val _wifiNetworks = MutableStateFlow<List<WifiNetworkItem>?>(null)
     val wifiNetworks: StateFlow<List<WifiNetworkItem>?> = _wifiNetworks.asStateFlow()
 
+    // Restore timestamp selection state
+    private val _restoreTargetType = MutableStateFlow<SystemDataType?>(null)
+    val restoreTargetType: StateFlow<SystemDataType?> = _restoreTargetType.asStateFlow()
+
+    private val _isBatchRestore = MutableStateFlow(false)
+    val isBatchRestore: StateFlow<Boolean> = _isBatchRestore.asStateFlow()
+
+    private val _availableSnapshots = MutableStateFlow<List<SystemBackupSnapshot>>(emptyList())
+    val availableSnapshots: StateFlow<List<SystemBackupSnapshot>> = _availableSnapshots.asStateFlow()
+
+    private val _selectedTimestamp = MutableStateFlow<Long?>(null)
+    val selectedTimestamp: StateFlow<Long?> = _selectedTimestamp.asStateFlow()
+
     init {
         refresh()
     }
@@ -171,24 +189,91 @@ class SystemDataViewModel @Inject constructor(
     fun backupSelected() {
         val targets = _selectedTypes.value
         if (targets.isEmpty()) return
-        executeOperation(isBackup = true, types = targets)
-    }
-
-    fun restoreSelected() {
-        val targets = _selectedTypes.value
-        if (targets.isEmpty()) return
-        executeOperation(isBackup = false, types = targets)
+        val timestamp = System.currentTimeMillis()
+        executeOperation(isBackup = true, types = targets, timestamp = timestamp)
     }
 
     fun backupSingle(type: SystemDataType) {
-        executeOperation(isBackup = true, types = setOf(type))
+        val timestamp = System.currentTimeMillis()
+        executeOperation(isBackup = true, types = setOf(type), timestamp = timestamp)
     }
 
-    fun restoreSingle(type: SystemDataType) {
-        executeOperation(isBackup = false, types = setOf(type))
+    fun openRestoreSingle(type: SystemDataType) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            val snaps = systemDataRepo.getSnapshotsForType(type)
+            _availableSnapshots.value = snaps
+            _selectedTimestamp.value = snaps.firstOrNull()?.timestamp
+            _restoreTargetType.value = type
+            _isBatchRestore.value = false
+            _isLoading.value = false
+        }
     }
 
-    private fun executeOperation(isBackup: Boolean, types: Set<SystemDataType>) {
+    fun openRestoreBatch() {
+        val targets = _selectedTypes.value
+        if (targets.isEmpty()) return
+        viewModelScope.launch {
+            _isLoading.value = true
+            val allSnaps = systemDataRepo.listSnapshots()
+            val filtered = allSnaps.filter { snap ->
+                targets.any { snap.hasType(it) }
+            }
+            _availableSnapshots.value = filtered
+            _selectedTimestamp.value = filtered.firstOrNull()?.timestamp
+            _isBatchRestore.value = true
+            _restoreTargetType.value = null
+            _isLoading.value = false
+        }
+    }
+
+    fun selectTimestamp(timestamp: Long) {
+        _selectedTimestamp.value = timestamp
+    }
+
+    fun dismissRestoreDialog() {
+        _restoreTargetType.value = null
+        _isBatchRestore.value = false
+        _availableSnapshots.value = emptyList()
+        _selectedTimestamp.value = null
+    }
+
+    fun deleteSnapshot(timestamp: Long) {
+        viewModelScope.launch {
+            systemDataRepo.deleteSnapshot(timestamp)
+            val type = _restoreTargetType.value
+            val isBatch = _isBatchRestore.value
+            val updated = if (type != null) {
+                systemDataRepo.getSnapshotsForType(type)
+            } else if (isBatch) {
+                val targets = _selectedTypes.value
+                systemDataRepo.listSnapshots().filter { snap -> targets.any { snap.hasType(it) } }
+            } else {
+                emptyList()
+            }
+            _availableSnapshots.value = updated
+            if (_selectedTimestamp.value == timestamp) {
+                _selectedTimestamp.value = updated.firstOrNull()?.timestamp
+            }
+            refresh()
+        }
+    }
+
+    fun confirmRestore() {
+        val ts = _selectedTimestamp.value ?: return
+        val targetType = _restoreTargetType.value
+        val isBatch = _isBatchRestore.value
+        dismissRestoreDialog()
+
+        if (targetType != null) {
+            executeOperation(isBackup = false, types = setOf(targetType), timestamp = ts)
+        } else if (isBatch) {
+            val targets = _selectedTypes.value
+            executeOperation(isBackup = false, types = targets, timestamp = ts)
+        }
+    }
+
+    private fun executeOperation(isBackup: Boolean, types: Set<SystemDataType>, timestamp: Long) {
         viewModelScope.launch {
             _isProcessing.value = true
             _processingCompleted.value = false
@@ -198,14 +283,23 @@ class SystemDataViewModel @Inject constructor(
             val results = mutableListOf<String>()
             var overallSuccess = true
 
+            // For restore, find snapshot to know what was saved at this timestamp
+            val snapshot = if (!isBackup) {
+                systemDataRepo.listSnapshots().firstOrNull { it.timestamp == timestamp }
+            } else null
+
             types.forEach { type ->
                 when (type) {
                     SystemDataType.CALL_LOG -> {
+                        if (!isBackup && snapshot != null && !snapshot.hasType(type)) {
+                            results.add("ℹ Call Logs: Not saved in this backup timestamp")
+                            return@forEach
+                        }
                         _processingMessage.value = if (isBackup) "Processing Call Logs..." else "Restoring Call Logs..."
                         val res = if (isBackup) {
-                            systemDataRepo.backupCallLogs { _processingMessage.value = it }
+                            systemDataRepo.backupCallLogs(timestamp = timestamp) { _processingMessage.value = it }
                         } else {
-                            systemDataRepo.restoreCallLogs { _processingMessage.value = it }
+                            systemDataRepo.restoreCallLogs(timestamp = timestamp) { _processingMessage.value = it }
                         }
                         res.onSuccess { count ->
                             results.add("✓ Call Logs: $count ${if (isBackup) "backed up" else "restored"}")
@@ -216,11 +310,15 @@ class SystemDataViewModel @Inject constructor(
                     }
 
                     SystemDataType.SMS -> {
+                        if (!isBackup && snapshot != null && !snapshot.hasType(type)) {
+                            results.add("ℹ SMS: Not saved in this backup timestamp")
+                            return@forEach
+                        }
                         _processingMessage.value = if (isBackup) "Processing SMS Messages..." else "Restoring SMS Messages..."
                         val res = if (isBackup) {
-                            systemDataRepo.backupSms { _processingMessage.value = it }
+                            systemDataRepo.backupSms(timestamp = timestamp) { _processingMessage.value = it }
                         } else {
-                            systemDataRepo.restoreSms { _processingMessage.value = it }
+                            systemDataRepo.restoreSms(timestamp = timestamp) { _processingMessage.value = it }
                         }
                         res.onSuccess { count ->
                             results.add("✓ SMS: $count ${if (isBackup) "backed up" else "restored"}")
@@ -231,11 +329,15 @@ class SystemDataViewModel @Inject constructor(
                     }
 
                     SystemDataType.CONTACTS -> {
+                        if (!isBackup && snapshot != null && !snapshot.hasType(type)) {
+                            results.add("ℹ Contacts: Not saved in this backup timestamp")
+                            return@forEach
+                        }
                         _processingMessage.value = if (isBackup) "Exporting Contacts (vCard & JSON)..." else "Restoring Contacts..."
                         val res = if (isBackup) {
-                            systemDataRepo.backupContacts { _processingMessage.value = it }
+                            systemDataRepo.backupContacts(timestamp = timestamp) { _processingMessage.value = it }
                         } else {
-                            systemDataRepo.restoreContacts { _processingMessage.value = it }
+                            systemDataRepo.restoreContacts(timestamp = timestamp) { _processingMessage.value = it }
                         }
                         res.onSuccess { count ->
                             results.add("✓ Contacts: $count ${if (isBackup) "exported" else "restored"}")
@@ -246,11 +348,15 @@ class SystemDataViewModel @Inject constructor(
                     }
 
                     SystemDataType.WIFI -> {
+                        if (!isBackup && snapshot != null && !snapshot.hasType(type)) {
+                            results.add("ℹ Wi-Fi: Not saved in this backup timestamp")
+                            return@forEach
+                        }
                         _processingMessage.value = if (isBackup) "Saving Wi-Fi Configurations..." else "Restoring Wi-Fi Configurations..."
                         val res = if (isBackup) {
-                            systemDataRepo.backupWifi { _processingMessage.value = it }
+                            systemDataRepo.backupWifi(timestamp = timestamp) { _processingMessage.value = it }
                         } else {
-                            systemDataRepo.restoreWifi { _processingMessage.value = it }
+                            systemDataRepo.restoreWifi(timestamp = timestamp) { _processingMessage.value = it }
                         }
                         res.onSuccess { count ->
                             results.add("✓ Wi-Fi: $count networks ${if (isBackup) "saved" else "restored"}")
@@ -320,6 +426,11 @@ fun SystemDataScreen(
     val processingCompleted by viewModel.processingCompleted.collectAsStateWithLifecycle()
     val processingSuccess by viewModel.processingSuccess.collectAsStateWithLifecycle()
     val wifiNetworks by viewModel.wifiNetworks.collectAsStateWithLifecycle()
+
+    val restoreTargetType by viewModel.restoreTargetType.collectAsStateWithLifecycle()
+    val isBatchRestore by viewModel.isBatchRestore.collectAsStateWithLifecycle()
+    val availableSnapshots by viewModel.availableSnapshots.collectAsStateWithLifecycle()
+    val selectedTimestamp by viewModel.selectedTimestamp.collectAsStateWithLifecycle()
 
     val allSelected = selectedTypes.size == 4
 
@@ -398,7 +509,7 @@ fun SystemDataScreen(
                 ) {
                     OutlinedButton(
                         modifier = Modifier.weight(1f),
-                        onClick = { viewModel.restoreSelected() },
+                        onClick = { viewModel.openRestoreBatch() },
                         enabled = selectedTypes.isNotEmpty() && !isProcessing,
                         shape = CircleShape,
                         border = BorderStroke(1.dp, ThemedColorSchemeKeyTokens.Primary.value.copy(alpha = 0.5f))
@@ -542,7 +653,7 @@ fun SystemDataScreen(
                     iconTint = iconTint,
                     onToggleSelect = { viewModel.toggleSelection(category.type) },
                     onBackup = { viewModel.backupSingle(category.type) },
-                    onRestore = { viewModel.restoreSingle(category.type) },
+                    onRestore = { viewModel.openRestoreSingle(category.type) },
                     onExtraAction = if (category.type == SystemDataType.WIFI) {
                         { viewModel.viewWifiPasswords() }
                     } else null
@@ -661,6 +772,21 @@ fun SystemDataScreen(
             }
         )
     }
+
+    // Restore Timestamp Selection Dialog
+    if (restoreTargetType != null || isBatchRestore) {
+        RestoreTimestampDialog(
+            targetType = restoreTargetType,
+            isBatch = isBatchRestore,
+            selectedTypes = selectedTypes,
+            snapshots = availableSnapshots,
+            selectedTimestamp = selectedTimestamp,
+            onSelectTimestamp = { viewModel.selectTimestamp(it) },
+            onDeleteSnapshot = { viewModel.deleteSnapshot(it) },
+            onConfirm = { viewModel.confirmRestore() },
+            onDismiss = { viewModel.dismissRestoreDialog() }
+        )
+    }
 }
 
 @Composable
@@ -744,14 +870,20 @@ private fun SystemDataCategoryCard(
                     )
                 }
 
-                if (category.backedUpCount > 0) {
+                val hasBackups = category.backedUpCount > 0 || category.backupCount > 0
+                if (hasBackups) {
                     Surface(
                         shape = CircleShape,
                         color = Color(0xFF2E7D32).copy(alpha = 0.12f),
                         border = BorderStroke(1.dp, Color(0xFF2E7D32).copy(alpha = 0.3f))
                     ) {
+                        val countLabel = if (category.backupCount > 1) {
+                            "${category.backedUpCount} saved • ${category.backupCount} backups"
+                        } else {
+                            "${category.backedUpCount} saved"
+                        }
                         Text(
-                            text = "${category.backedUpCount} saved",
+                            text = countLabel,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF2E7D32),
@@ -792,14 +924,14 @@ private fun SystemDataCategoryCard(
                 OutlinedButton(
                     onClick = onRestore,
                     shape = CircleShape,
-                    enabled = category.backedUpCount > 0,
+                    enabled = hasBackups,
                     border = BorderStroke(1.dp, ThemedColorSchemeKeyTokens.OutlineVariant.value.copy(alpha = 0.4f))
                 ) {
                     Text(
                         text = "Restore",
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.SemiBold,
-                        color = if (category.backedUpCount > 0) ThemedColorSchemeKeyTokens.Primary.value else ThemedColorSchemeKeyTokens.Outline.value
+                        color = if (hasBackups) ThemedColorSchemeKeyTokens.Primary.value else ThemedColorSchemeKeyTokens.Outline.value
                     )
                 }
 
@@ -1044,5 +1176,320 @@ private fun WifiPasswordViewerDialog(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun RestoreTimestampDialog(
+    targetType: SystemDataType?,
+    isBatch: Boolean,
+    selectedTypes: Set<SystemDataType>,
+    snapshots: List<SystemBackupSnapshot>,
+    selectedTimestamp: Long?,
+    onSelectTimestamp: (Long) -> Unit,
+    onDeleteSnapshot: (Long) -> Unit,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val context = LocalContext.current
+    var snapshotToDelete by remember { mutableStateOf<Long?>(null) }
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = SizeTokens.Level16, vertical = SizeTokens.Level24)
+                .heightIn(max = 580.dp),
+            shape = RoundedCornerShape(24.dp),
+            color = ThemedColorSchemeKeyTokens.SurfaceContainerLowest.value,
+            tonalElevation = SizeTokens.Level6,
+            shadowElevation = SizeTokens.Level8,
+            border = BorderStroke(1.2.dp, ThemedColorSchemeKeyTokens.OutlineVariant.value.copy(alpha = 0.35f))
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(SizeTokens.Level20),
+                verticalArrangement = Arrangement.spacedBy(SizeTokens.Level12)
+            ) {
+                // Header
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(SizeTokens.Level8)
+                    ) {
+                        Surface(
+                            modifier = Modifier.size(36.dp),
+                            shape = CircleShape,
+                            color = ThemedColorSchemeKeyTokens.Primary.value.copy(alpha = 0.12f)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Rounded.History,
+                                    contentDescription = null,
+                                    tint = ThemedColorSchemeKeyTokens.Primary.value,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+
+                        Column {
+                            Text(
+                                text = if (targetType != null) "Restore ${targetType.displayName}" else "Restore System Data",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = ThemedColorSchemeKeyTokens.OnSurface.value
+                            )
+                            Text(
+                                text = "Choose a backup timestamp to restore",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = ThemedColorSchemeKeyTokens.OnSurfaceVariant.value
+                            )
+                        }
+                    }
+
+                    IconButton(onClick = onDismiss) {
+                        Icon(
+                            imageVector = Icons.Rounded.Close,
+                            contentDescription = "Close",
+                            tint = ThemedColorSchemeKeyTokens.OnSurfaceVariant.value
+                        )
+                    }
+                }
+
+                if (snapshots.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f, fill = false)
+                            .padding(vertical = SizeTokens.Level32),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "No saved backups found for this category.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = ThemedColorSchemeKeyTokens.OnSurfaceVariant.value
+                        )
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f, fill = false),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(snapshots) { snap ->
+                            val isSelected = snap.timestamp == selectedTimestamp
+                            val relativeTime = DateUtil.getShortRelativeTimeSpanString(context, snap.timestamp, System.currentTimeMillis())
+                            val formattedDate = snap.dateFormatted.ifEmpty {
+                                DateUtil.formatTimestamp(snap.timestamp, DateUtil.PATTERN_YMD_HMS)
+                            }
+
+                            Surface(
+                                shape = RoundedCornerShape(16.dp),
+                                color = if (isSelected) {
+                                    ThemedColorSchemeKeyTokens.PrimaryContainer.value.copy(alpha = 0.25f)
+                                } else {
+                                    ThemedColorSchemeKeyTokens.SurfaceContainerHighest.value.copy(alpha = 0.35f)
+                                },
+                                border = BorderStroke(
+                                    width = if (isSelected) 1.5.dp else 1.dp,
+                                    color = if (isSelected) {
+                                        ThemedColorSchemeKeyTokens.Primary.value.copy(alpha = 0.7f)
+                                    } else {
+                                        ThemedColorSchemeKeyTokens.OutlineVariant.value.copy(alpha = 0.3f)
+                                    }
+                                ),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .clickable { onSelectTimestamp(snap.timestamp) }
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = SizeTokens.Level12, vertical = SizeTokens.Level10),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(SizeTokens.Level8)
+                                ) {
+                                    RadioButton(
+                                        selected = isSelected,
+                                        onClick = { onSelectTimestamp(snap.timestamp) },
+                                        colors = RadioButtonDefaults.colors(
+                                            selectedColor = ThemedColorSchemeKeyTokens.Primary.value
+                                        )
+                                    )
+
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = formattedDate,
+                                            style = MaterialTheme.typography.titleSmall,
+                                            fontWeight = FontWeight.Bold,
+                                            color = ThemedColorSchemeKeyTokens.OnSurface.value
+                                        )
+                                        Text(
+                                            text = relativeTime,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = ThemedColorSchemeKeyTokens.OnSurfaceVariant.value
+                                        )
+
+                                        Spacer(modifier = Modifier.height(4.dp))
+
+                                        // Category badges
+                                        Row(
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            if (targetType != null) {
+                                                val count = snap.countFor(targetType)
+                                                Surface(
+                                                    shape = CircleShape,
+                                                    color = ThemedColorSchemeKeyTokens.Primary.value.copy(alpha = 0.12f)
+                                                ) {
+                                                    Text(
+                                                        text = "$count saved",
+                                                        fontSize = 11.sp,
+                                                        fontWeight = FontWeight.SemiBold,
+                                                        color = ThemedColorSchemeKeyTokens.Primary.value,
+                                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                                    )
+                                                }
+                                            } else {
+                                                if (snap.callLogsCount > 0) {
+                                                    MiniBadge(text = "${snap.callLogsCount} Calls", color = Color(0xFF00796B))
+                                                }
+                                                if (snap.smsCount > 0) {
+                                                    MiniBadge(text = "${snap.smsCount} SMS", color = Color(0xFF1976D2))
+                                                }
+                                                if (snap.contactsCount > 0) {
+                                                    MiniBadge(text = "${snap.contactsCount} Contacts", color = Color(0xFFE65100))
+                                                }
+                                                if (snap.wifiCount > 0) {
+                                                    MiniBadge(text = "${snap.wifiCount} Wi-Fi", color = Color(0xFF7B1FA2))
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    IconButton(
+                                        onClick = { snapshotToDelete = snap.timestamp },
+                                        modifier = Modifier.size(32.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Delete,
+                                            contentDescription = "Delete",
+                                            tint = ThemedColorSchemeKeyTokens.Error.value.copy(alpha = 0.7f),
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Action Buttons
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(SizeTokens.Level8, Alignment.End),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedButton(
+                        onClick = onDismiss,
+                        shape = CircleShape
+                    ) {
+                        Text(text = "Cancel")
+                    }
+
+                    Button(
+                        onClick = onConfirm,
+                        enabled = selectedTimestamp != null,
+                        shape = CircleShape,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = ThemedColorSchemeKeyTokens.Primary.value,
+                            contentColor = ThemedColorSchemeKeyTokens.OnPrimary.value
+                        )
+                    ) {
+                        Text(text = "Restore", fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
+    }
+
+    // Delete Confirmation Dialog
+    if (snapshotToDelete != null) {
+        Dialog(onDismissRequest = { snapshotToDelete = null }) {
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = ThemedColorSchemeKeyTokens.SurfaceContainerLowest.value,
+                tonalElevation = SizeTokens.Level6,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Text(
+                        text = "Delete Backup?",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = ThemedColorSchemeKeyTokens.OnSurface.value
+                    )
+                    Text(
+                        text = "Are you sure you want to delete this backup snapshot? This cannot be undone.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = ThemedColorSchemeKeyTokens.OnSurfaceVariant.value
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
+                    ) {
+                        OutlinedButton(onClick = { snapshotToDelete = null }, shape = CircleShape) {
+                            Text("Cancel")
+                        }
+                        Button(
+                            onClick = {
+                                val toDel = snapshotToDelete
+                                snapshotToDelete = null
+                                if (toDel != null) onDeleteSnapshot(toDel)
+                            },
+                            shape = CircleShape,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = ThemedColorSchemeKeyTokens.Error.value,
+                                contentColor = ThemedColorSchemeKeyTokens.OnError.value
+                            )
+                        ) {
+                            Text("Delete", fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MiniBadge(text: String, color: Color) {
+    Surface(
+        shape = CircleShape,
+        color = color.copy(alpha = 0.12f)
+    ) {
+        Text(
+            text = text,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = color,
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+        )
     }
 }
